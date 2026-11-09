@@ -15,20 +15,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%230d7a6f'/%3E%3Cg transform='translate(32 33) scale(1.65) translate(-12 -12)' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<script>
-(function () {
-  var lang = "en";
-  try {
-    var q = (location.search + location.hash).match(/lang=(fa|en)|#(fa|en)\b/);
-    var saved = JSON.parse(localStorage.getItem("hermes-walls-lab-v1") || "{}").lang;
-    if (q) lang = q[1] || q[2];
-    else if (saved) lang = saved;
-    else if ((navigator.language || "").toLowerCase().indexOf("fa") === 0) lang = "fa";
-  } catch (e) {}
-  document.documentElement.lang = lang;
-  document.documentElement.dir = lang === "fa" ? "rtl" : "ltr";
-})();
-</script>
+<script src="i18n/languages.js"></script>
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/app.css">
 </head>
@@ -204,6 +191,8 @@
 </dialog>
 <div class="prov" id="prov" role="status" aria-live="polite"></div>
 <canvas class="confetti" id="confetti" hidden></canvas>
+<script src="i18n/en.js"></script>
+<script src="i18n/fa.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

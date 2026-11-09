@@ -409,19 +409,19 @@ pre.cfg .c { color: #7f95ab; }
 }
 .langbtn:hover { border-color: var(--accent); }
 .langbtn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-#langTxt { font-family: "Vazirmatn", sans-serif; }
-html[lang="fa"] #langTxt { font-family: "Inter", sans-serif; }
+#langTxt { font-family: "Inter", sans-serif; }
+#langTxt[data-script="arab"] { font-family: "Vazirmatn", sans-serif; }
 
-/* ---------- Persian: Vazirmatn only here ---------- */
-html[lang="fa"] body,
-html[lang="fa"] button, html[lang="fa"] input, html[lang="fa"] select,
-html[lang="fa"] svg.map text:not(.s):not(.zw-en) {
+/* ---------- Arabic-script typography (including Persian) ---------- */
+html[data-script="arab"] body,
+html[data-script="arab"] button, html[data-script="arab"] input, html[data-script="arab"] select,
+html[data-script="arab"] svg.map text:not(.s):not(.zw-en) {
   font-family: "Vazirmatn", Tahoma, sans-serif;
 }
-html[lang="fa"] body { font-size: 14px; line-height: 1.75; font-feature-settings: normal; }
-html[lang="fa"] code, html[lang="fa"] .mono, html[lang="fa"] pre, html[lang="fa"] .term, html[lang="fa"] svg.map text.s { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; }
-html[lang="fa"] .pane-h h2, html[lang="fa"] .grp, html[lang="fa"] .insp-b h4, html[lang="fa"] .blast-card h4 { letter-spacing: 0; text-transform: none; }
-html[lang="fa"] .brand b { font-family: "Inter", sans-serif; }
+html[data-script="arab"] body { font-size: 14px; line-height: 1.75; font-feature-settings: normal; }
+html[data-script="arab"] code, html[data-script="arab"] .mono, html[data-script="arab"] pre, html[data-script="arab"] .term, html[data-script="arab"] svg.map text.s { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; }
+html[data-script="arab"] .pane-h h2, html[data-script="arab"] .grp, html[data-script="arab"] .insp-b h4, html[data-script="arab"] .blast-card h4 { letter-spacing: 0; text-transform: none; }
+html[data-script="arab"] .brand b { font-family: "Inter", sans-serif; }
 bdi { unicode-bidi: isolate; }
 .ltr, pre.cfg, .term, code { direction: ltr; unicode-bidi: isolate; }
 pre.cfg, .term { text-align: left; }
@@ -575,7 +575,7 @@ pre.cfg, .term { text-align: left; }
 .fside { display: flex; align-items: center; gap: 6px; }
 .pill.busy { background: color-mix(in srgb, var(--fc) 15%, transparent); color: color-mix(in srgb, var(--fc) 75%, var(--ink)); animation: fadeIn 1s ease infinite alternate; }
 .demo { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border: 1px dashed var(--zone-line); padding: 1px 6px; border-radius: 999px; }
-html[lang="fa"] .demo { text-transform: none; letter-spacing: 0; font-size: 11px; }
+html[data-script="arab"] .demo { text-transform: none; letter-spacing: 0; font-size: 11px; }
 .frm { height: 30px; min-width: 30px; padding: 0 7px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 12px; font-weight: 700; transition: background .2s, color .2s, border-color .2s, padding .3s var(--spring); }
 .frm svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .frm:hover { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); }
@@ -667,7 +667,7 @@ dialog.closing .dcard { animation: dOut .26s ease-in both; }
 .fbtn.roll svg { animation: roll .55s var(--spring); }
 @keyframes roll { from { transform: rotate(-200deg) scale(.6); } }
 .lbl { font-size: 11.5px; font-weight: 700; color: var(--muted); margin: 0 2px 9px; letter-spacing: .07em; text-transform: uppercase; }
-html[lang="fa"] .lbl { letter-spacing: 0; text-transform: none; font-size: 12.5px; }
+html[data-script="arab"] .lbl { letter-spacing: 0; text-transform: none; font-size: 12.5px; }
 .swatches { display: flex; flex-wrap: wrap; gap: 11px; padding: 2px 4px; }
 .swatch { width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; background: var(--c); display: grid; place-items: center; transition: transform .3s var(--spring), box-shadow .3s; }
 .swatch svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: scale(.3); transition: opacity .2s, transform .35s var(--spring); }

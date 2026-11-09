@@ -8,10 +8,11 @@ This folder is a plain static site. No build step, no dependencies, and no exter
 
 | Path | Purpose |
 | --- | --- |
-| `index.html` | Page markup, plus a small inline script that sets the language before first paint. |
+| `index.html` | Page markup and local script/stylesheet references. |
 | `css/app.css` | All app styles. |
 | `css/fonts.css` | `@font-face` rules for Inter, JetBrains Mono, and Vazirmatn. |
 | `js/app.js` | All app logic. |
+| `i18n/` | Language registry, English/Persian text catalogs, and [translation guide](i18n/README.md). |
 | `fonts/` | Self-hosted font files (WOFF / WOFF2). |
 | `manifest.webmanifest` | Install metadata, the "Add a friend" shortcut, and store screenshots. |
 | `sw.js` | Service worker that handles offline caching. |
@@ -48,6 +49,7 @@ If you add a new asset, add it to the `SHELL` list in `sw.js` so it gets cached 
 
 | Trigger | Action |
 | --- | --- |
+| `?lang=fa` / `#fa` | Opens in Persian (RTL); use `en` for English or any registered language code |
 | `?action=add-friend` | Opens the add-friend dialog (also the installed app's shortcut) |
 | `+` | Opens the add-friend dialog |
 | `[` | Toggles the walls panel (wide screens) |
@@ -55,3 +57,9 @@ If you add a new asset, add it to the `SHELL` list in `sw.js` so it gets cached 
 | `\` | Toggles both panels (wide screens) |
 
 Keyboard shortcuts are ignored while you're typing in a field or holding a modifier key (Ctrl, Alt, or Cmd). `+` is also ignored while the dialog is already open.
+
+## Translations
+
+Edit text in `i18n/en.js` or `i18n/fa.js`, not in the app logic. The language button cycles through registered languages. Direction, digit formatting, and script typography are language metadata, rather than hard-coded Farsi checks. Missing translations fall back to English.
+
+See [i18n/README.md](i18n/README.md) to add a language, use placeholders/plurals, or configure RTL. Catalogs are ordinary local scripts, so translations also work from disk and offline.
