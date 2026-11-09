@@ -1,0 +1,33 @@
+{
+  "id": "./",
+  "name": "Hermes Walls Lab",
+  "short_name": "Walls Lab",
+  "description": "An interactive, bilingual (English / فارسی) lab for the six-layer Hermes-on-Telegram hardening design. Add friends, flip walls, launch attacks, watch what gets through.",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070d16",
+  "theme_color": "#0f1826",
+  "dir": "auto",
+  "lang": "en",
+  "categories": ["education", "utilities", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add a friend",
+      "short_name": "Add friend",
+      "description": "Provision a new friend: own bridge, proxy, Hermes box and sandbox",
+      "url": "./?action=add-friend",
+      "icons": [{ "src": "icons/shortcut-add.png", "sizes": "96x96", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    { "src": "screenshots/wide.png", "sizes": "1440x900", "type": "image/png", "form_factor": "wide", "label": "Architecture map with a newly added friend" },
+    { "src": "screenshots/narrow.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Adding a friend on a phone" }
+  ]
+}
