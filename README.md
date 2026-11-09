@@ -2,13 +2,17 @@
 
 An interactive, bilingual (English / فارسی) lab for the six-layer Hermes-on-Telegram hardening design. Add friends, flip walls, launch attacks, and watch what gets through.
 
-This folder is a self-contained static site. No build step, no dependencies.
+This folder is a plain static site. No build step, no dependencies, and no external requests.
 
 ## Contents
 
 | Path | Purpose |
 | --- | --- |
-| `index.html` | The whole app. Fonts are embedded, so it works fully offline once loaded. |
+| `index.html` | Page markup, plus a small inline script that sets the language before first paint. |
+| `css/app.css` | All app styles. |
+| `css/fonts.css` | `@font-face` rules for Inter, JetBrains Mono, and Vazirmatn. |
+| `js/app.js` | All app logic. |
+| `fonts/` | Self-hosted font files (WOFF / WOFF2). |
 | `manifest.webmanifest` | Install metadata, the "Add a friend" shortcut, and store screenshots. |
 | `sw.js` | Service worker that handles offline caching. |
 | `icons/` | App, maskable, Apple touch, and shortcut icons. |
@@ -34,8 +38,8 @@ python3 -m http.server 8000
 
 ## Caching
 
-- **Pages:** network first with a 4 s timeout, then the cached copy. Updates show up quickly, and the app still opens offline.
-- **Icons and manifest:** served from cache and refreshed in the background (stale-while-revalidate).
+- **Pages, CSS, and JS:** network first with a 4 s timeout, then the cached copy. Updates show up quickly, and the app still opens offline.
+- **Fonts, icons, and manifest:** served from cache and refreshed in the background (stale-while-revalidate).
 - Only same-origin `GET` requests are handled.
 
 If you add a new asset, add it to the `SHELL` list in `sw.js` so it gets cached on install.

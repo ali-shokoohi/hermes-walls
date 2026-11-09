@@ -1,8 +1,20 @@
-/* Hermes Walls Lab service worker: offline-first shell, network-first page so updates land fast. */
-const VERSION = "walls-lab-v2";
+/* Hermes Walls Lab service worker: offline-first shell, network-first page, CSS and JS so updates land fast. */
+const VERSION = "walls-lab-v3";
 const SHELL = [
   "./",
   "./index.html",
+  "./css/fonts.css",
+  "./css/app.css",
+  "./js/app.js",
+  "./fonts/inter-400.woff",
+  "./fonts/inter-600.woff",
+  "./fonts/inter-700.woff",
+  "./fonts/inter-800.woff",
+  "./fonts/jetbrains-mono-400.woff",
+  "./fonts/jetbrains-mono-600.woff",
+  "./fonts/vazirmatn-400.woff2",
+  "./fonts/vazirmatn-500-700.woff2",
+  "./fonts/vazirmatn-800-900.woff2",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -50,7 +62,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Pages: network first (4 s budget), then the cached shell. The page is fully self-contained.
+  // Pages: network first (4 s budget), then the cached shell.
   if (req.mode === "navigate") {
     event.respondWith(
       fromNetwork(req, 4000).catch(async () =>
@@ -63,7 +75,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Everything else (icons, manifest): stale-while-revalidate.
+  // CSS and JS: network first so they never lag behind a freshly fetched page.
+  if (req.destination === "script" || req.destination === "style") {
+    event.respondWith(
+      fromNetwork(req, 4000).catch(async () => (await caches.match(req)) || Response.error())
+    );
+    return;
+  }
+
+  // Everything else (fonts, icons, manifest): stale-while-revalidate.
   const refresh = fromNetwork(req, 8000).catch(() => undefined);
   event.waitUntil(refresh);
   event.respondWith(

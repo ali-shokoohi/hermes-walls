@@ -15,16 +15,19 @@ Hermes Walls Lab: a self-contained, bilingual (English / فارسی) static PWA.
 
 | Path | Notes |
 | --- | --- |
-| `index.html` | The entire app (~600 KB). Never read it whole; grep for line numbers, then read narrow ranges. |
+| `index.html` | Markup only (~15 KB), plus the inline language script in `<head>`. |
+| `css/app.css` | All app styles. |
+| `css/fonts.css` | `@font-face` rules pointing at `fonts/`. |
+| `js/app.js` | All app logic (~160 KB, ~1900 lines). Grep for line numbers, then read narrow ranges. |
+| `fonts/` | Self-hosted Inter, JetBrains Mono, and Vazirmatn files. |
 | `sw.js` | Service worker. `VERSION` is the cache name; `SHELL` is the precache list. |
 | `manifest.webmanifest` | Install metadata, shortcuts, screenshots. |
 | `icons/`, `screenshots/` | Binary install assets referenced by the manifest and `sw.js`. |
 
-### Inside `index.html`
+### Code map
 
-- **Lines ~18–31:** an early inline script that picks the language (saved setting first, then `navigator.language`) before first paint.
-- **Lines ~32–834:** `<style>`. The first lines embed the Inter fonts as base64 `data:` URLs, so those lines are very long. Cut grep output short (`| cut -c1-200`).
-- **Lines ~1008–2925:** the main `<script>`, plain ES5-style JS in a single IIFE.
+- `index.html` `<head>`: an early inline script picks the language (URL, then saved setting, then `navigator.language`) before first paint. Keep it inline so there's no flash of the wrong direction.
+- `js/app.js`: plain ES5-style JS in a single IIFE, loaded by a classic `<script>` at the end of `<body>`.
   - `el(tag, attrs, html)`: DOM helper. `$(id)`: `getElementById`.
   - `store.get/set`: persisted to `localStorage` under the key `hermes-walls-lab-v1`.
   - `P(en, fa)` builds a bilingual string (either may be a function of `n`). `T(x)` resolves it for the current `LANG`. `S(key)` looks it up in `STR`. `N(x)` converts digits to Persian when `LANG === "fa"`.
@@ -32,7 +35,7 @@ Hermes Walls Lab: a self-contained, bilingual (English / فارسی) static PWA.
 
 ## Conventions
 
-- Keep everything in `index.html`. Don't add external scripts, stylesheets, fonts, or CDNs; the app must work fully offline and when opened from disk.
+- Keep styles in `css/app.css` and logic in `js/app.js`. Don't add third-party scripts, stylesheets, fonts, or CDNs; the app must work fully offline and when opened from disk. Use classic scripts, not ES modules (modules break on `file://`).
 - Match the existing style: `var`, `function` declarations, double quotes, no frameworks, no modules.
 - **Every user-facing string needs both English and Persian.** Add it to `STR` via `P("…", "…")` and render it with `S("key")`. Format numbers with `N()`.
 - Support RTL. Use logical CSS properties, and flip horizontal arrow-key handling when `LANG === "fa"`.
