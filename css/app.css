@@ -90,7 +90,7 @@ select.preset {
 .main {
   --lw-open: 300px; --rw-open: 390px; --lw: var(--lw-open); --rw: var(--rw-open);
   --ease: cubic-bezier(.22, 1, .36, 1);
-  display: grid; grid-template-columns: var(--lw) minmax(0, 1fr) var(--rw); min-height: 0;
+  display: grid; grid-template-columns: var(--lw) minmax(0, 1fr) var(--rw); min-height: 0; overflow: hidden;
   transition: grid-template-columns .6s var(--ease);
 }
 .main.hide-l { --lw: 0px; }
@@ -131,10 +131,22 @@ select.preset {
 .sw input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---------- map ---------- */
-.stage { position: relative; min-height: 0; overflow: auto; background:
+.stage { position: relative; min-inline-size: 0; min-height: 0; overflow-y: auto; overflow-x: hidden; background:
   radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--muted) 22%, transparent) 1px, transparent 0) 0 0 / 22px 22px, var(--bg); }
-.stage-in { padding: 18px 18px 120px; max-width: max(820px, calc((100vh - 190px) * var(--ar, 1.42))); margin: 0 auto; transition: max-width .6s var(--ease); }
-.main.hide-l.hide-r .stage-in { max-width: max(900px, calc((100vh - 170px) * var(--ar, 1.42))); }
+@supports (scrollbar-gutter: stable) { .stage { scrollbar-gutter: stable; } }
+.stage-in { padding: 18px 18px 120px; max-width: max(820px, calc((100vh - 190px) * 1.25)); margin: 0 auto; transition: max-width .6s var(--ease); }
+/* Fit the initial desktop topology to the viewport, not just its width. */
+.stage.fit-default .stage-in { height: 100%; display: flex; flex-direction: column; padding-block-end: 18px; }
+.stage.fit-default .maphead { flex: none; }
+.stage.fit-default #mapHost { flex: 1; min-height: 0; display: flex; align-items: center; }
+.stage.fit-default svg.map { height: 100%; }
+@media (min-width: 1081px) {
+  .main.hide-l .stage-in, .main.hide-r .stage-in { max-width: max(1080px, calc((100vh - 190px) * 1.6)); }
+  .main.hide-l.hide-r .stage-in { max-width: max(1440px, calc((100vh - 190px) * 2)); }
+  .stage.fit-default svg.map { height: 82%; transition: height .6s var(--ease); }
+  .main.hide-l .stage.fit-default svg.map, .main.hide-r .stage.fit-default svg.map { height: 91%; }
+  .main.hide-l.hide-r .stage.fit-default svg.map { height: 100%; }
+}
 
 /* panel toggles */
 .ptog { position: relative; }
@@ -164,7 +176,8 @@ select.preset {
 .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-svg.map { width: 100%; height: auto; display: block; user-select: none; -webkit-user-select: none; overflow: visible; }
+/* Natural SVG proportions keep labels, icons and rounded corners undistorted. */
+svg.map { width: 100%; max-inline-size: 100%; height: auto; display: block; user-select: none; -webkit-user-select: none; overflow: visible; }
 
 .zone rect { fill: var(--zone); stroke: var(--zone-line); stroke-width: 1.5; stroke-dasharray: 6 5; }
 .zone.host > rect { fill: color-mix(in srgb, var(--panel) 55%, transparent); stroke-dasharray: none; stroke-width: 1.5; }

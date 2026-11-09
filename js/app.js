@@ -187,23 +187,31 @@ function rebuildTopology() {
 loadFriends();
 rebuildTopology();
 
-/* layouts are generated for any number of friends; with Reza + Sina they reproduce the original hand-tuned coordinates */
-function buildLayout(name) {
+/* Resize the zone geometry, never the contents. Wrap before cards become cramped. */
+function buildLayout(name, width) {
   var F = FRIENDS.length, n = {}, z = {};
   if (name === "wide") {
-    var CW = 378, vbW = 900 + (F - 2) * CW, hostW = F * CW + 12, infraW = 124 + hostW - 10 - 342, shift = (vbW - 900) / 2;
+    var roomy = F > 2 && width >= 1050, vbW = roomy ? 1240 : 900;
+    var columns = Math.min(F, roomy ? 3 : 2), rows = Math.ceil(F / columns);
+    var hostW = vbW - 132, infraW = vbW - 352;
+    var proxyColumns = Math.min(F, roomy ? 3 : 2), proxyRows = Math.ceil(F / proxyColumns);
+    var infraH = 120 + (proxyRows - 1) * 76, bridgeY = 138 + infraH;
+    var bottom = bridgeY + rows * 384 - 20, shift = (vbW - 900) / 2;
     var step = F <= 4 ? 70 : F === 5 ? 60 : 50, sy = 200 + F * step;
     FRIENDS.forEach(function (f, i) { n[f.id] = [62, 200 + i * step]; });
     n.stranger = [62, sy]; n.thief = [62, Math.min(sy + 130, 600)];
     n.tg = [400 + shift, 44]; n.llm = [590 + shift, 44]; n.evil = [vbW - 100, 44]; n.host = [240, 168];
     FRIENDS.forEach(function (f, i) {
-      n["proxy-" + f.id] = [Math.round(342 + infraW / F * (i + 0.5)), 182];
-      n["hermes-" + f.id] = [323 + i * CW, 338];
-      n["sandbox-" + f.id] = [323 + i * CW, 522];
-      z["br-" + f.id] = [138 + i * CW, 258, 368, 364];
+      var proxyRow = Math.floor(i / proxyColumns), proxyCount = Math.min(proxyColumns, F - proxyRow * proxyColumns);
+      n["proxy-" + f.id] = [Math.round(342 + infraW / proxyCount * (i % proxyColumns + 0.5)), 182 + proxyRow * 76];
+      var row = Math.floor(i / columns), count = Math.min(columns, F - row * columns);
+      var cellW = (vbW - 144) / count, x = 138 + i % columns * cellW, y = bridgeY + row * 384;
+      n["hermes-" + f.id] = [x + (cellW - 10) / 2, y + 80];
+      n["sandbox-" + f.id] = [x + (cellW - 10) / 2, y + 264];
+      z["br-" + f.id] = [x, y, cellW - 10, 364];
     });
-    z.hostz = [124, 96, hostW, 536]; z.infra = [342, 116, infraW, 120];
-    return { vb: [0, 0, vbW, 640], w: 170, h: 58, aw: 104, ah: 42, n: n, z: z };
+    z.hostz = [124, 96, hostW, bottom - 86]; z.infra = [342, 116, infraW, infraH];
+    return { vb: [0, 0, vbW, bottom + 18], w: 170, h: 58, aw: 104, ah: 42, n: n, z: z };
   }
   var cols = [54, 158, 262, 366], actors = FRIENDS.map(function (f) { return f.id; }).concat(["stranger", "thief"]);
   actors.forEach(function (id, i) { n[id] = [cols[i % 4], 34 + Math.floor(i / 4) * 52]; });
@@ -234,16 +242,21 @@ function clip(s, max) { var a = Array.from(String(s)); return a.length > max ? a
 var L = null, layoutName = "", builtLang = "", builtSig = "";
 var svg, gEdges, gTrails, gNodes, gFx, nodeEls = {}, zoneEls = {};
 
+/* Keep the same topology while panel tracks animate; only its viewport changes. */
+function mapLayoutWidth() {
+  if (isNarrow()) return $("mapHost").clientWidth;
+  var main = $("main"), style = getComputedStyle(main);
+  return Math.max(640, main.clientWidth - parseFloat(style.getPropertyValue("--lw-open")) - parseFloat(style.getPropertyValue("--rw-open")) - 52);
+}
 function renderMap(force) {
   var host = $("mapHost");
-  var name = host.clientWidth < 640 ? "tall" : "wide";
-  var sig = FRIENDS.map(function (f) { return f.id; }).join(",");
+  var width = mapLayoutWidth(), name = width < 640 ? "tall" : "wide";
+  $("vMap").classList.toggle("fit-default", name === "wide" && FRIENDS.length === 2);
+  var sig = FRIENDS.map(function (f) { return f.id; }).join(",") + (FRIENDS.length > 2 && width >= 1050 ? ":roomy" : ":regular");
   if (!force && name === layoutName && builtLang === LANG && builtSig === sig && svg) { paintState(); return; }
-  layoutName = name; builtLang = LANG; builtSig = sig; L = buildLayout(name);
+  layoutName = name; builtLang = LANG; builtSig = sig; L = buildLayout(name, width);
   host.innerHTML = "";
   svg = sv("svg", { "class": "map", viewBox: L.vb.join(" "), role: "img", direction: "ltr", "aria-label": S("mapAria") });
-  host.parentNode.style.setProperty("--ar", Math.max(1.42, L.vb[2] / L.vb[3]).toFixed(3));
-  svg.style.minWidth = name === "wide" && FRIENDS.length > 2 ? Math.round(L.vb[2] * 0.6) + "px" : "";
   var gZones = sv("g"); gEdges = sv("g"); gTrails = sv("g"); gNodes = sv("g"); gFx = sv("g");
   svg.appendChild(gZones); svg.appendChild(gEdges); svg.appendChild(gTrails); svg.appendChild(gNodes); svg.appendChild(gFx);
   zoneEls = {}; nodeEls = {};
@@ -278,6 +291,12 @@ function renderMap(force) {
   });
   EDGES.forEach(function (e) {
     var a = L.n[e[0]], b = L.n[e[1]];
+    if (name === "wide" && e[0].indexOf("hermes-") === 0 && e[1].indexOf("proxy-") === 0) {
+      var bridge = L.z["br-" + e[0].slice(7)], rail = bridge[0] - 5, turn = L.z.infra[1] + L.z.infra[3] + 10;
+      gEdges.appendChild(sv("path", { "class": "edge", "data-e": e[0] + "|" + e[1],
+        d: "M" + (a[0] - L.w / 2) + " " + a[1] + " H" + rail + " V" + turn + " H" + b[0] + " V" + (b[1] + L.h / 2) }));
+      return;
+    }
     gEdges.appendChild(sv("line", { "class": "edge" + (e[2] ? " " + e[2] : ""), "data-e": e[0] + "|" + e[1], x1: a[0], y1: a[1], x2: b[0], y2: b[1] }));
   });
   Object.keys(NODES).forEach(function (id) {
@@ -290,6 +309,7 @@ function renderMap(force) {
     ni.appendChild(sv("rect", { "class": "box", x: -w / 2, y: -h / 2, width: w, height: h, rx: actor ? h / 2 : 11 }));
     var tt = T(n.t), st = T(n.s);
     if (actor && fr) tt = clip(tt, layoutName === "tall" ? 7 : 8);
+    var fullTitle = sv("title"); fullTitle.textContent = T(n.t); g.appendChild(fullTitle);
     var t = sv("text", { "class": "t", x: 0, y: actor ? -1 : -4, "text-anchor": "middle" }); t.textContent = tt; ni.appendChild(t);
     var sIsFa = /[؀-ۿ]/.test(st);
     var s = sv("text", { "class": sIsFa ? "s s-fa" : "s", x: 0, y: actor ? 13 : 14, "text-anchor": "middle" }); s.textContent = st; ni.appendChild(s);
@@ -309,8 +329,21 @@ function renderMap(force) {
   });
   svg.addEventListener("click", function () { closeInspector(); });
   host.appendChild(svg);
+  Object.keys(nodeEls).forEach(function (id) {
+    var g = nodeEls[id], w = +g.querySelector(".box").getAttribute("width");
+    fitMapLabel(g.querySelector("text.t"), w - (NODES[id].k.indexOf("actor") >= 0 ? 28 : 20));
+  });
+  Object.keys(zoneEls).forEach(function (id) {
+    fitMapLabel(zoneEls[id].querySelector("text.zl"), id === "hostz" && name === "wide" ? 208 : L.z[id][2] - (ZONES[id].fid ? 58 : 28));
+  });
   applyBuildMask();
   paintState();
+}
+function fitMapLabel(label, width) {
+  var text = label.textContent;
+  while (text.length > 1 && label.getComputedTextLength() > width) {
+    text = text.slice(0, -1); label.textContent = text + "…";
+  }
 }
 function pos(id) { return L.n[id]; }
 
@@ -1787,7 +1820,20 @@ resetChat();
 $("preset").value = matchPreset();
 (function () { var st = store.get("panels", { l: true, r: true }); if (!st.l) setPanel("l", false, true); if (!st.r) setPanel("r", false, true); })();
 syncInert();
-var rt; window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(function () { var was = layoutName; renderMap(); if (was !== layoutName) clearFx(); }, 120); });
+var rt;
+function scheduleMapLayout() {
+  clearTimeout(rt);
+  rt = setTimeout(function () { var was = L; renderMap(); if (was !== L) clearFx(); }, 120);
+}
+window.addEventListener("resize", scheduleMapLayout);
+if (window.ResizeObserver) {
+  var mapWidth = 0;
+  new ResizeObserver(function (entries) {
+    var width = entries[0].contentRect.width;
+    if (Math.abs(width - mapWidth) < 1) return;
+    mapWidth = width; scheduleMapLayout();
+  }).observe($("mapHost"));
+}
 if (isNarrow()) setView("map");
 renderFriends(null, true);
 syncInstall();
