@@ -255,6 +255,7 @@ function renderMap(force) {
   var sig = FRIENDS.map(function (f) { return f.id; }).join(",") + (FRIENDS.length > 2 && width >= 1050 ? ":roomy" : ":regular");
   if (!force && name === layoutName && builtLang === LANG && builtSig === sig && svg) { paintState(); return; }
   layoutName = name; builtLang = LANG; builtSig = sig; L = buildLayout(name, width);
+  stopPlayback();
   host.innerHTML = "";
   svg = sv("svg", { "class": "map", viewBox: L.vb.join(" "), role: "img", direction: "ltr", "aria-label": S("mapAria") });
   var gZones = sv("g"); gEdges = sv("g"); gTrails = sv("g"); gNodes = sv("g"); gFx = sv("g");
@@ -708,7 +709,54 @@ function scoreAll(silent) {
 
 /* ------------------------------------------------------------------ animation */
 var playToken = 0;
+var attackAuto = store.get("attackAuto", true) !== false, attackPlayback = null, attackWait = null;
+function syncPlayback() {
+  var p = attackPlayback;
+  $("attackAuto").checked = attackAuto;
+  $("attackAuto").setAttribute("aria-label", S("playbackAutoAria"));
+  $("attackProgress").textContent = p && p.index >= 0 ? S("playbackProgress", { current: p.index + 1, total: p.steps.length }) : "";
+  $("attackNext").hidden = !p || attackAuto;
+  $("attackStop").hidden = !p;
+  $("attackNext").disabled = !p || !p.waiting;
+  $("attackNext").textContent = S(p && p.index === p.steps.length - 1 ? "playbackFinish" : "playbackNext");
+  $("attackStep").hidden = !p || p.index < 0;
+  $("attackStep").textContent = p && p.index >= 0 ? TX(p.steps[p.index].text) : "";
+}
+function releaseAttackStep() {
+  if (!attackWait) return;
+  var wait = attackWait; attackWait = null;
+  clearTimeout(wait.timer);
+  if (attackPlayback) attackPlayback.waiting = false;
+  syncPlayback();
+  wait.resolve();
+}
+function stopPlayback() {
+  playToken++;
+  attackPlayback = null;
+  releaseAttackStep();
+  syncPlayback();
+}
+function waitAttackStep(ms) {
+  return new Promise(function (resolve) {
+    attackPlayback.waiting = true;
+    attackWait = { resolve: resolve, timer: null, ms: ms };
+    if (attackAuto) attackWait.timer = setTimeout(releaseAttackStep, ms);
+    syncPlayback();
+  });
+}
+$("attackAuto").addEventListener("change", function () {
+  attackAuto = $("attackAuto").checked;
+  store.set("attackAuto", attackAuto);
+  if (attackWait) {
+    clearTimeout(attackWait.timer);
+    if (attackAuto) attackWait.timer = setTimeout(releaseAttackStep, attackWait.ms);
+  }
+  syncPlayback();
+});
+$("attackNext").addEventListener("click", releaseAttackStep);
+$("attackStop").addEventListener("click", function () { $("resX").click(); });
 function clearFx() {
+  stopPlayback();
   if (!svg) return;
   gTrails.innerHTML = ""; gFx.innerHTML = "";
   Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove("is-hit", "is-reach", "is-safe"); });
@@ -754,8 +802,9 @@ function movePacket(dot, from, to, ms, token) {
 var KIND_CLS = { blk: "blk", cnt: "cnt", brc: "brc" };
 async function play(steps, opts) {
   opts = opts || {};
-  var token = ++playToken;
   clearFx();
+  var token = ++playToken;
+  if (opts.attack) { attackPlayback = { steps: steps, index: -1, waiting: false }; syncPlayback(); }
   var speed = opts.fast ? 0.45 : 1;
   var prev = steps[0].at, dot = sv("circle", { "class": "packet", r: 7, cx: pos(prev)[0], cy: pos(prev)[1] });
   gFx.appendChild(dot);
@@ -763,10 +812,6 @@ async function play(steps, opts) {
   for (var i = 0; i < steps.length; i++) {
     if (token !== playToken) return false;
     var st = steps[i];
-    if (isNarrow() && nodeEls[st.at]) {
-      var nr = nodeEls[st.at].getBoundingClientRect(), vh = window.innerHeight;
-      if (nr.top < 90 || nr.bottom > vh - 230) $("vMap").scrollBy({ top: nr.top - vh * 0.32, behavior: reduced ? "auto" : "smooth" });
-    }
     if (st.at !== prev) {
       var a = pos(prev), b = pos(st.at);
       gTrails.appendChild(sv("line", { "class": "trail" + (st.kind === "bad" || st.kind === "brc" ? " bad" : ""), x1: a[0], y1: a[1], x2: b[0], y2: b[1] }));
@@ -777,13 +822,18 @@ async function play(steps, opts) {
     if (token !== playToken) return false;
     if (curTip) curTip.remove();
     curTip = tip(st.at, st.text, KIND_CLS[st.kind] || "");
+    if (opts.attack) attackPlayback.index = i;
     if (opts.onStep) opts.onStep(i);
     if (st.kind === "blk") { burst(st.at, "blk"); if (nodeEls[st.at]) nodeEls[st.at].classList.add("is-safe"); }
     if (st.kind === "cnt") { burst(st.at, "cnt"); if (nodeEls[st.at]) nodeEls[st.at].classList.add("is-reach"); }
     if (st.kind === "brc") { burst(st.at, "brc"); if (nodeEls[st.at]) nodeEls[st.at].classList.add("is-hit"); }
-    await sleep((st.kind === "n" || st.kind === "ok" || st.kind === "bad" ? 650 : 400) * speed * (LM().pace || 1));
+    var delay = (st.kind === "n" || st.kind === "ok" || st.kind === "bad" ? 650 : 400) * speed * (LM().pace || 1);
+    if (opts.attack) await waitAttackStep(delay);
+    else await sleep(delay);
   }
+  if (token !== playToken) return false;
   dot.remove();
+  if (opts.attack) { attackPlayback = null; syncPlayback(); }
   return true;
 }
 
@@ -797,8 +847,8 @@ function launch(id) {
   if (isNarrow()) setView("map");
   renderTrace(a.n, s);
   showResult("running", S("running") + T(a.n), T(a.d), []);
-  if (isNarrow()) $("vMap").scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   play(s.steps, {
+    attack: true,
     onStep: function (i) { var lis = $("trace").children; for (var k = 0; k < lis.length; k++) lis[k].style.opacity = k <= i ? "1" : ".35"; }
   }).then(function (done) {
     if (!done) return;
@@ -1259,6 +1309,7 @@ function applyStatic() {
   D.title = S("docTitle");
   setWho(who);
   friendsStatic();
+  syncPlayback();
 }
 function resetChat() { $("msgs").innerHTML = ""; sys("", STR.chatWelcome); renderQuick(); }
 function setLang(lang, animate) {
@@ -1270,7 +1321,7 @@ function setLang(lang, animate) {
   applyStatic();
   renderWalls();
   renderAttacks();
-  playToken++;
+  stopPlayback();
   renderMap(true);
   resetChat();
   if (lastSim) renderTrace(ABY[lastSim.id].n, lastSim.s);

@@ -47,6 +47,15 @@ If you add a new asset, add it to the `SHELL` list in `sw.js` so it gets cached 
 
 ## Deep links and shortcuts
 
+### Attack playback
+
+Use the **Automatic** switch above the architecture map to choose how attacks play.
+Automatic playback is on by default. Turn it off to keep each step visible until you
+press **Next step** (or **Finish** on the last step). The current step and its explanation
+appear above the map. You can switch modes during a run; your choice is saved on this device.
+
+### Navigation
+
 | Trigger | Action |
 | --- | --- |
 | `?lang=fa` / `#fa` | Opens in Persian (RTL); use `en` for English or any registered language code |

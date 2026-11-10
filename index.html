@@ -69,6 +69,16 @@
             <span><i style="background:var(--packet)"></i><span data-i18n="lgPacket"></span></span>
           </div>
         </div>
+        <div class="playback" role="group" aria-labelledby="playbackLabel">
+          <div class="playback-controls">
+            <span id="playbackLabel" data-i18n="playbackLabel"></span>
+            <label class="playback-auto"><span data-i18n="playbackAuto"></span><span class="sw"><input type="checkbox" role="switch" id="attackAuto" checked><i></i></span></label>
+            <span id="attackProgress" role="status" aria-live="polite"></span>
+            <button class="chipbtn primary" type="button" id="attackNext" hidden data-i18n="playbackNext"></button>
+            <button class="chipbtn" type="button" id="attackStop" hidden data-i18n="playbackStop"></button>
+          </div>
+          <p id="attackStep" hidden></p>
+        </div>
         <div id="mapHost"></div>
         <div class="result" id="result" role="status" aria-live="polite">
           <div class="rk" id="resK">✓</div>
