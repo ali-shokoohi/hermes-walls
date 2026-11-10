@@ -1,5 +1,5 @@
 /* Hermes Walls Lab service worker: offline-first shell, network-first page, CSS and JS so updates land fast. */
-const VERSION = "walls-lab-v18";
+const VERSION = "walls-lab-v19";
 const SHELL = [
   "./",
   "./index.html",

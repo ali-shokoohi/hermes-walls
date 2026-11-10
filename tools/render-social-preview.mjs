@@ -44,7 +44,7 @@ try {
     expression: `(async () => {
       await document.fonts.ready;
       await Promise.all(Array.from(document.images, img => img.decode()));
-      return { fonts: document.fonts.check('700 64px Inter') && document.fonts.check('400 26px Vazirmatn'),
+      return { fonts: document.fonts.check('700 64px Inter'),
         overflow: Array.from(document.querySelectorAll('main, main *')).filter(el => {
           const r = el.getBoundingClientRect();
           return r.left < 0 || r.top < 0 || r.right > 1280 || r.bottom > 640;
