@@ -257,7 +257,7 @@ function renderMap(force) {
   layoutName = name; builtLang = LANG; builtSig = sig; L = buildLayout(name, width);
   stopPlayback();
   host.innerHTML = "";
-  svg = sv("svg", { "class": "map", viewBox: L.vb.join(" "), role: "img", direction: "ltr", "aria-label": S("mapAria") });
+  svg = sv("svg", { "class": "map", viewBox: L.vb.join(" "), role: "group", direction: "ltr", "aria-label": S("mapAria") });
   var gZones = sv("g"); gEdges = sv("g"); gTrails = sv("g"); gNodes = sv("g"); gFx = sv("g");
   svg.appendChild(gZones); svg.appendChild(gEdges); svg.appendChild(gTrails); svg.appendChild(gNodes); svg.appendChild(gFx);
   zoneEls = {}; nodeEls = {};
@@ -286,7 +286,7 @@ function renderMap(force) {
     }
     var hit = sv("rect", { "class": "zhit", x: r[0], y: r[1], width: r[2], height: 30, tabindex: 0, role: "button", "aria-label": S("inspect") + T(z.t) });
     hit.addEventListener("click", function (e) { e.stopPropagation(); inspect(zid); });
-    hit.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inspect(zid); } });
+    hit.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inspect(zid); $("inspX").focus(); } });
     g.appendChild(hit);
     gZones.appendChild(g); zoneEls[zid] = g;
   });
@@ -325,7 +325,7 @@ function renderMap(force) {
       ni.appendChild(bg); g._bt = bt; g._bg = bg;
     }
     g.addEventListener("click", function (e) { e.stopPropagation(); inspect(id); });
-    g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inspect(id); } });
+    g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inspect(id); $("inspX").focus(); } });
     gNodes.appendChild(g); nodeEls[id] = g;
   });
   svg.addEventListener("click", function () { closeInspector(); });
@@ -625,7 +625,7 @@ function renderWalls() {
     var box = el("section", { "class": "layer", "data-layer": Ln });
     var h = el("div", { "class": "layer-h" });
     h.innerHTML = '<span class="ln">' + N(Ln) + '</span><span class="lt">' + H(LAYERS[Ln]) + '</span><span class="lc"></span>';
-    var all = el("button", { type: "button", "class": "lall" }, H(STR.all));
+    var all = el("button", { type: "button", "class": "lall", "aria-label": S("layerToggle", { n: Ln }) }, H(STR.all));
     all.addEventListener("click", function () {
       var anyOff = ws.some(function (w) { return !C[w.id]; });
       ws.forEach(function (w) { C[w.id] = anyOff; });
@@ -641,6 +641,8 @@ function renderWalls() {
       cb.addEventListener("change", function () { C[w.id] = cb.checked; changed((cb.checked ? S("onX") : S("offX")) + T(w.n)); });
       row.addEventListener("mouseenter", function () { focusWall(w.id, true); });
       row.addEventListener("mouseleave", function () { focusWall(w.id, false); });
+      row.addEventListener("focusin", function () { focusWall(w.id, true); });
+      row.addEventListener("focusout", function () { focusWall(w.id, false); });
       box.appendChild(row);
     });
     host.appendChild(box);
@@ -847,6 +849,7 @@ function launch(id) {
   if (isNarrow()) setView("map");
   renderTrace(a.n, s);
   showResult("running", S("running") + T(a.n), T(a.d), []);
+  if (isNarrow()) $("vMap").scrollTop = D.querySelector(".playback").offsetTop - 17;
   play(s.steps, {
     attack: true,
     onStep: function (i) { var lis = $("trace").children; for (var k = 0; k < lis.length; k++) lis[k].style.opacity = k <= i ? "1" : ".35"; }
@@ -980,7 +983,7 @@ function inspect(id) {
   Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.toggle("is-sel", k === id); });
   Object.keys(zoneEls).forEach(function (k) { zoneEls[k].classList.toggle("is-sel", k === id); });
   var box = $("insp");
-  var h = '<div class="insp-h"><div class="it"><b>' + H(meta.t) + '</b><span dir="auto">' + H(meta.s || "") + '</span></div><button class="ibtn" type="button" id="inspX" aria-label="' + esc(S("closeInsp")) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="insp-b">';
+  var h = '<div class="insp-h"><div class="it"><b id="inspectorTitle">' + H(meta.t) + '</b><span dir="auto">' + H(meta.s || "") + '</span></div><button class="ibtn" type="button" id="inspX" aria-label="' + esc(S("closeInsp")) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="insp-b">';
   if (info.d) h += "<p>" + H(info.d) + "</p>";
   var hold = holdsFor(id);
   if (hold) h += "<h4>" + H(STR.holds) + '</h4><div class="holds' + (hold.bad ? " bad" : "") + '">' + H(hold.t) + "</div>";
@@ -998,6 +1001,7 @@ function inspect(id) {
   if (fr0 && !fr0.core && !(building && building.f === fr0)) h += "<h4>" + H(STR.manage) + '</h4><button type="button" class="chipbtn danger" id="inspRm" style="width:100%">' + H(S("removeX") + T(fr0.name)) + "</button>";
   h += "</div>";
   box.innerHTML = h; box.classList.add("on"); box.scrollTop = 0;
+  box.setAttribute("aria-labelledby", "inspectorTitle");
   $("inspX").addEventListener("click", closeInspector);
   box.querySelectorAll("input[data-iw]").forEach(function (cb) {
     cb.addEventListener("change", function () { var w = cb.getAttribute("data-iw"); C[w] = cb.checked; changed((cb.checked ? S("onX") : S("offX")) + T(WBY[w].n)); inspect(id); });
@@ -1017,10 +1021,13 @@ function inspect(id) {
   });
 }
 function closeInspector() {
+  var target = inspected && (nodeEls[inspected] || (zoneEls[inspected] && zoneEls[inspected].querySelector(".zhit")));
+  var returnFocus = $("insp").contains(D.activeElement);
   inspected = null;
   $("insp").classList.remove("on");
   Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove("is-sel"); });
   Object.keys(zoneEls).forEach(function (k) { zoneEls[k].classList.remove("is-sel"); });
+  if (returnFocus && target) target.focus();
 }
 
 /* ------------------------------------------------------------------ telegram chat */
@@ -1150,6 +1157,7 @@ function setWho(w) {
   who = w;
   D.querySelectorAll(".who button").forEach(function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-who") === w ? "true" : "false"); });
   $("chatIn").placeholder = S(w === "stranger" ? "phStranger" : w === "thief" ? "phThief" : "phReza");
+  $("chatIn").setAttribute("aria-label", $("chatIn").placeholder);
 }
 D.querySelectorAll(".who button").forEach(function (b) { b.addEventListener("click", function () { setWho(b.getAttribute("data-who")); }); });
 $("compose").addEventListener("submit", function (e) { e.preventDefault(); var v = $("chatIn").value; $("chatIn").value = ""; chat(v); });
@@ -1212,6 +1220,44 @@ function logEvent(kind, what, detail) {
 }
 
 /* ------------------------------------------------------------------ change + views */
+var experiment = null;
+function syncExperiment() {
+  var key = "learnIntro", params = {};
+  if (experiment) {
+    key = experiment.phase === "baseline" ? "learnBaseline" : experiment.phase === "compared" ? "learnCompared" : "learnOpen";
+    params = { attack: T(ABY[experiment.id].n), wall: experiment.wall ? wname(experiment.wall) : "", outcome: S("kind_" + experiment.outcome) };
+  }
+  $("learnText").textContent = S(key, params);
+  $("learnRun").textContent = S(experiment && experiment.phase === "baseline" ? "learnWeaken" : experiment ? "learnAgain" : "learnStart");
+  $("learnRestore").hidden = !experiment;
+}
+function restoreExperiment() {
+  if (!experiment) return;
+  clearFx();
+  Object.keys(experiment.config).forEach(function (id) { C[id] = experiment.config[id]; });
+  experiment = null;
+  changed(S("learnRestored"));
+  $("result").className = "result";
+  syncExperiment();
+  $("learnText").textContent = S("learnRestored");
+}
+$("learnRun").addEventListener("click", function () {
+  if (experiment && experiment.phase === "baseline") {
+    C[experiment.wall] = false;
+    changed(S("offX") + wname(experiment.wall));
+    var compared = simulate(experiment.id);
+    experiment.phase = "compared"; experiment.outcome = compared.outcome;
+  } else {
+    if (experiment) restoreExperiment();
+    var config = {}, candidate = ATTACKS.filter(function (a) { var s = simulate(a.id); return s.wall && s.outcome !== "breached"; })[0] || ATTACKS[0];
+    Object.keys(C).forEach(function (id) { config[id] = C[id]; });
+    var baseline = simulate(candidate.id);
+    experiment = { config: config, id: candidate.id, wall: baseline.wall, outcome: baseline.outcome, phase: baseline.wall ? "baseline" : "open" };
+  }
+  syncExperiment();
+  launch(experiment.id);
+});
+$("learnRestore").addEventListener("click", restoreExperiment);
 function changed(msg) {
   store.set("cfg", C);
   $("preset").value = matchPreset();
@@ -1228,23 +1274,55 @@ $("score").addEventListener("click", function () { setView("attacks"); });
 
 function isNarrow() { return window.matchMedia("(max-width: 1080px)").matches; }
 var SIDE_TABS = ["attacks", "friends", "chat", "test", "trace", "log"];
+var activeTab = "attacks";
 function selectTab(name) {
-  D.querySelectorAll(".tab").forEach(function (t) { t.setAttribute("aria-selected", t.getAttribute("data-tab") === name ? "true" : "false"); });
-  SIDE_TABS.forEach(function (n) { $("tp-" + n).classList.toggle("on", n === name); });
+  activeTab = name;
+  D.querySelectorAll(".tab").forEach(function (t) {
+    var n = t.getAttribute("data-tab"), selected = n === name;
+    if (!t.id) t.id = "tab-" + n;
+    t.setAttribute("aria-controls", "tp-" + n);
+    t.setAttribute("aria-selected", selected ? "true" : "false"); t.tabIndex = selected ? 0 : -1;
+    $("tp-" + n).setAttribute("aria-labelledby", t.id);
+  });
+  SIDE_TABS.forEach(function (n) {
+    var p = $("tp-" + n), selected = n === name;
+    p.classList.toggle("on", selected); p.toggleAttribute("inert", !selected); p.tabIndex = 0;
+  });
+  D.querySelectorAll("[data-tool]").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-tool") === name ? "true" : "false"); });
   if (name === "friends") renderFriends(null, true);
 }
 function setView(v) {
+  if (v === "tools") v = activeTab === "attacks" ? "friends" : activeTab;
   appEl.setAttribute("data-view", v);
   if (SIDE_TABS.indexOf(v) >= 0) { selectTab(v); if (!isNarrow() && !panelOpen("r")) setPanel("r", true, true); }
-  if (!isNarrow()) return;
+  if (!isNarrow()) { syncInert(); return; }
+  if (v !== "map") closeInspector();
   $("vMap").classList.toggle("on", v === "map");
   $("vWalls").classList.toggle("on", v === "walls");
   $("vSide").classList.toggle("on", SIDE_TABS.indexOf(v) >= 0);
-  D.querySelectorAll("#mtabs button").forEach(function (b) { b.setAttribute("aria-selected", b.getAttribute("data-view") === v ? "true" : "false"); });
+  D.querySelectorAll("#mtabs button").forEach(function (b) {
+    var name = b.getAttribute("data-view"), selected = name === v || (name === "tools" && SIDE_TABS.indexOf(v) > 0);
+    b.removeAttribute("aria-selected");
+    if (selected) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  syncInert();
   if (v === "map") setTimeout(function () { renderMap(); }, 0);
 }
-D.querySelectorAll(".tab").forEach(function (t) { t.addEventListener("click", function () { selectTab(t.getAttribute("data-tab")); }); });
+D.querySelectorAll(".tab").forEach(function (t) {
+  t.addEventListener("click", function () { setView(t.getAttribute("data-tab")); });
+  t.addEventListener("keydown", function (e) {
+    var tabs = Array.prototype.slice.call(D.querySelectorAll(".tab")), index = tabs.indexOf(t), next;
+    if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = tabs.length - 1;
+    else if (e.key === "ArrowRight") next = (index + (isRTL() ? -1 : 1) + tabs.length) % tabs.length;
+    else if (e.key === "ArrowLeft") next = (index + (isRTL() ? 1 : -1) + tabs.length) % tabs.length;
+    else return;
+    e.preventDefault(); setView(tabs[next].getAttribute("data-tab")); tabs[next].focus();
+  });
+});
 D.querySelectorAll("#mtabs button").forEach(function (b) { b.addEventListener("click", function () { setView(b.getAttribute("data-view")); }); });
+D.querySelectorAll("[data-tool]").forEach(function (b) { b.addEventListener("click", function () { setView(b.getAttribute("data-tool")); }); });
+D.querySelector(".skip-link").addEventListener("click", function () { setView("map"); $("vMap").focus(); });
 
 /* ------------------------------------------------------------------ theme + toast */
 function applyTheme(t) { if (t) R.setAttribute("data-theme", t); else R.removeAttribute("data-theme"); syncThemeColor(); }
@@ -1279,14 +1357,20 @@ $("edgeL").addEventListener("click", function () { setPanel("l", true, true); })
 $("edgeR").addEventListener("click", function () { setPanel("r", true, true); });
 D.addEventListener("keydown", function (e) {
   var tag = (e.target.tagName || "").toLowerCase();
-  if (tag === "input" || tag === "textarea" || tag === "select" || isNarrow() || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable || isNarrow() || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "[") { e.preventDefault(); setPanel("l", !panelOpen("l"), true); }
   if (e.key === "]") { e.preventDefault(); setPanel("r", !panelOpen("r"), true); }
   if (e.key === "\\") { e.preventDefault(); var both = panelOpen("l") || panelOpen("r"); setPanel("l", !both, true); setPanel("r", !both, true); }
 });
 var mqNarrow = window.matchMedia("(max-width: 1080px)");
-function syncInert() { ["l", "r"].forEach(function (sd) { var pane = sd === "l" ? $("vWalls") : $("vSide"); if (mqNarrow.matches || panelOpen(sd)) pane.removeAttribute("inert"); else pane.setAttribute("inert", ""); }); }
-if (mqNarrow.addEventListener) mqNarrow.addEventListener("change", syncInert);
+function syncInert() {
+  ["vMap", "vWalls", "vSide"].forEach(function (id) {
+    var pane = $(id), visible = isNarrow() ? pane.classList.contains("on") : id === "vMap" || panelOpen(id === "vWalls" ? "l" : "r");
+    pane.toggleAttribute("inert", !visible);
+  });
+  $("fab").toggleAttribute("inert", isNarrow() && appEl.getAttribute("data-view") !== "map");
+}
+if (mqNarrow.addEventListener) mqNarrow.addEventListener("change", function () { setView(appEl.getAttribute("data-view") || "map"); });
 
 /* ------------------------------------------------------------------ language */
 function applyStatic() {
@@ -1304,12 +1388,16 @@ function applyStatic() {
   $("score").title = S("scoreTitle");
   $("resX").setAttribute("aria-label", S("dismiss"));
   $("sendBtn").setAttribute("aria-label", S("sendAria"));
+  $("mtabs").setAttribute("aria-label", S("labNavigation"));
+  $("toolNav").setAttribute("aria-label", S("toolNavigation"));
+  D.querySelector(".tabs").setAttribute("aria-label", S("toolsHeading"));
   $("edgeL").setAttribute("aria-label", S("showWalls")); $("edgeR").setAttribute("aria-label", S("showTools"));
   ["l", "r"].forEach(function (sd) { var b = sd === "l" ? $("togL") : $("togR"); var open = panelOpen(sd); b.title = S(sd === "l" ? (open ? "hideWalls" : "showWalls") : (open ? "hideTools" : "showTools")); b.setAttribute("aria-label", b.title); });
   D.title = S("docTitle");
   setWho(who);
   friendsStatic();
   syncPlayback();
+  syncExperiment();
 }
 function resetChat() { $("msgs").innerHTML = ""; sys("", STR.chatWelcome); renderQuick(); }
 function setLang(lang, animate) {
@@ -1539,7 +1627,10 @@ function setField(id, err, hint, val) {
   var f = $(id), show = !!(err && (dstate.tried || (dstate.touched[id] && val)));
   f.classList.toggle("err", show);
   f.classList.toggle("ok", !err);
-  f.querySelector(".hint").innerHTML = H(show ? err : hint);
+  var help = f.querySelector(".hint"), input = f.querySelector("input");
+  help.id = id + "-help"; help.innerHTML = H(show ? err : hint);
+  input.setAttribute("aria-describedby", help.id);
+  input.setAttribute("aria-invalid", show ? "true" : "false");
 }
 function nope(b) { if (b) bump(b, "nope"); }
 function openAdd() {
@@ -1770,37 +1861,6 @@ function provDone(f, failed) {
   $("pvDone").addEventListener("click", provClose);
   $("pvMap").addEventListener("click", function () { provClose(); showFriend(f.id); });
   if ($("pvMore")) $("pvMore").addEventListener("click", function () { provClose(); openAdd(); });
-  if (!failed) {
-    var r = p.getBoundingClientRect(), cs = getComputedStyle(R);
-    confetti(r.left + r.width / 2, r.top + 40, [f.c, cs.getPropertyValue("--accent").trim(), cs.getPropertyValue("--packet").trim(), cs.getPropertyValue("--ok").trim(), cs.getPropertyValue("--warn").trim()]);
-  }
-}
-var confTok = 0;
-function confetti(x, y, colors) {
-  if (reduced) return;
-  var cv = $("confetti"), ctx = cv.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1), W = window.innerWidth, Hh = window.innerHeight;
-  cv.hidden = false; cv.width = W * dpr; cv.height = Hh * dpr; ctx.scale(dpr, dpr);
-  var parts = [];
-  for (var i = 0; i < 150; i++) {
-    var a = -Math.PI / 2 + (Math.random() - 0.5) * 1.6, v = 6 + Math.random() * 10;
-    parts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, w: 5 + Math.random() * 6, h: 3 + Math.random() * 5, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4, c: colors[i % colors.length] });
-  }
-  var t0 = performance.now(), last = t0, tk = ++confTok;
-  function frame(now) {
-    if (tk !== confTok) return;
-    var dt = Math.min(2.5, (now - last) / 16.7), age = now - t0; last = now;
-    ctx.clearRect(0, 0, W, Hh);
-    parts.forEach(function (p) {
-      p.vy += 0.3 * dt; p.vx *= Math.pow(0.985, dt); p.vy *= Math.pow(0.99, dt);
-      p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt;
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
-      ctx.globalAlpha = Math.max(0, 1 - age / 2600);
-      ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2)) + 1);
-      ctx.restore();
-    });
-    if (age < 2600) requestAnimationFrame(frame); else { ctx.clearRect(0, 0, W, Hh); cv.hidden = true; }
-  }
-  requestAnimationFrame(frame);
 }
 function friendsStatic() {
   $("addBtn").title = S("addFriendT");
@@ -1813,7 +1873,7 @@ function friendsStatic() {
 ["addBtn", "addBtn2", "fab"].forEach(function (id) { $(id).addEventListener("click", openAdd); });
 D.addEventListener("keydown", function (e) {
   var tag = (e.target.tagName || "").toLowerCase();
-  if (tag === "input" || tag === "textarea" || tag === "select" || e.metaKey || e.ctrlKey || e.altKey || dlg.open) return;
+  if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable || e.metaKey || e.ctrlKey || e.altKey || dlg.open) return;
   if (e.key === "+") { e.preventDefault(); openAdd(); }
 });
 
@@ -1858,7 +1918,7 @@ function syncThemeColor() {
   var forced = R.getAttribute("data-theme");
   D.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
     var dark = forced ? forced === "dark" : (m.getAttribute("media") || "").indexOf("dark") >= 0;
-    m.setAttribute("content", dark ? "#0f1826" : "#ffffff");
+    m.setAttribute("content", dark ? "#1d1d1f" : "#ffffff");
   });
 }
 
@@ -1867,6 +1927,7 @@ applyStatic();
 renderWalls();
 renderMap();
 renderAttacks();
+selectTab("attacks");
 resetChat();
 $("preset").value = matchPreset();
 (function () { var st = store.get("panels", { l: true, r: true }); if (!st.l) setPanel("l", false, true); if (!st.r) setPanel("r", false, true); })();

@@ -1,5 +1,5 @@
 /* Hermes Walls Lab service worker: offline-first shell, network-first page, CSS and JS so updates land fast. */
-const VERSION = "walls-lab-v12";
+const VERSION = "walls-lab-v13";
 const SHELL = [
   "./",
   "./index.html",
@@ -23,7 +23,9 @@ const SHELL = [
   "./icons/icon-512.png",
   "./icons/maskable-512.png",
   "./icons/apple-touch-icon.png",
-  "./icons/shortcut-add.png"
+  "./icons/shortcut-add.png",
+  "./screenshots/wide.png",
+  "./screenshots/narrow.png"
 ];
 
 self.addEventListener("install", (event) => {
