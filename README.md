@@ -17,7 +17,7 @@ This folder is a plain static site. No build step, no dependencies, and no exter
 | `manifest.webmanifest` | Install metadata, the "Add a friend" shortcut, and store screenshots. |
 | `sw.js` | Service worker that handles offline caching. |
 | `icons/` | App, maskable, Apple touch, and shortcut icons. |
-| `screenshots/` | `wide.png` (1440×900) and `narrow.png` (780×1688) for the install dialog. |
+| `screenshots/` | `wide.png` (1440×900) and `narrow.png` (780×1688) for the install dialog; `social-preview.png` (1280×640) for shared links. |
 | `UI-UX-RESEARCH.md` | Related-product research, primary sources, design decisions, and validation plan. |
 | `tools/check-ui.mjs` | Optional dependency-free browser regression checks and screenshot refresh. |
 | `tools/check-i18n.mjs` | Optional dependency-free catalog, placeholder, registry, and precache validation. |
@@ -33,6 +33,14 @@ This folder is a plain static site. No build step, no dependencies, and no exter
 Bumping `VERSION` matters: it names the cache, so old caches get cleared on activation. Open tabs show a "Reload" toast when a new version is waiting.
 
 All paths are relative, so the app also works from a subpath (for example `example.com/walls/`).
+
+### Shared-link preview
+
+The live site is [ali-shokoohi.github.io/hermes-walls](https://ali-shokoohi.github.io/hermes-walls/). Its static Open Graph and Twitter card metadata in `index.html` points to `screenshots/social-preview.png`. Absolute HTTPS URLs are intentional for social crawlers; update `og:url`, `og:image`, and `twitter:image` if deploying to another public address. Runtime asset references remain relative and work offline/from disk. The bilingual preview is the same for every language/deep link; it does not require JavaScript to be discovered.
+
+To refresh the artwork, edit `tools/social-preview.html`, start disposable Chromium with loopback debugging as described below, then run `rtk proxy node tools/render-social-preview.mjs`. This development-only renderer uses the existing screenshot and local fonts, checks image loading, bounds, 1280×640 dimensions, and the under-1-MB size limit. Review the generated PNG and bump the service-worker version before deploying it. Do not add the artwork source or renderer to the app shell.
+
+GitHub repository URLs use a separate image: in **Repository Settings → General → Social preview → Edit → Upload an image**, upload `screenshots/social-preview.png`. Committing the image or setting website metadata does not change GitHub's repository card. See [GitHub's social preview guide](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/customizing-your-repositorys-social-media-preview). Sharing services may cache older cards and choose whether to show previews.
 
 ## Run locally
 

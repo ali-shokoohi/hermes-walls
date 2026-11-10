@@ -1,5 +1,5 @@
 /* Hermes Walls Lab service worker: offline-first shell, network-first page, CSS and JS so updates land fast. */
-const VERSION = "walls-lab-v17";
+const VERSION = "walls-lab-v18";
 const SHELL = [
   "./",
   "./index.html",
@@ -25,6 +25,7 @@ const SHELL = [
   "./icons/apple-touch-icon.png",
   "./icons/shortcut-add.png",
   "./screenshots/wide.png",
+  "./screenshots/social-preview.png",
   "./screenshots/narrow.png"
 ];
 
