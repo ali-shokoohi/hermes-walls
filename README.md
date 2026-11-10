@@ -20,6 +20,8 @@ This folder is a plain static site. No build step, no dependencies, and no exter
 | `screenshots/` | `wide.png` (1440×900) and `narrow.png` (780×1688) for the install dialog. |
 | `UI-UX-RESEARCH.md` | Related-product research, primary sources, design decisions, and validation plan. |
 | `tools/check-ui.mjs` | Optional dependency-free browser regression checks and screenshot refresh. |
+| `tools/check-i18n.mjs` | Optional dependency-free catalog, placeholder, registry, and precache validation. |
+| `CONTRIBUTING.md` | Setup, contribution paths, coding conventions, and pull-request checklist. |
 | `AGENTS.md` | Contributor conventions, code map, and verification guidance. |
 | `.opencode/skills/research-driven-lab-ux/` | Reusable research/refactor workflow, evidence pitfalls, and panel-control checklist. |
 
@@ -85,9 +87,20 @@ Keyboard shortcuts are ignored while you're typing in a field or editable conten
 
 ## Translations
 
-Edit text in `i18n/en.js` or `i18n/fa.js`, not in the app logic. The language button cycles through registered languages. Direction, digit formatting, and script typography are language metadata, rather than hard-coded Farsi checks. Missing translations fall back to English.
+Edit text in `i18n/en.js` or `i18n/fa.js`, not in the app logic. The header's native language dropdown shows the current language and lists all registered languages by their native names. Selecting one updates the lab in place and saves your preference without changing wall/friend configuration. Existing switching behavior still stops playback and resets simulated chat. A bare-URL reload uses the saved language; explicit `?lang=…` / `#…` links take precedence (the selector does not rewrite the URL). Direction, digit formatting, and script typography are language metadata, rather than hard-coded Farsi checks. Missing keys fall back to English; missing plural categories use the translation's `other` form.
 
 See [i18n/README.md](i18n/README.md) to add a language, use placeholders/plurals, or configure RTL. Catalogs are ordinary local scripts, so translations also work from disk and offline.
+
+## Contributing
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md) for translation, documentation, and code contribution workflows. No app dependencies need installing. With Node 22+, validate translations without a browser:
+
+```sh
+rtk proxy node tools/check-i18n.mjs
+rtk proxy node --test tools/check-i18n.test.mjs
+```
+
+The default check requires complete catalogs; `--allow-missing` reports explicit partial translations as fallback warnings while still rejecting structural errors. See the translation guide for limits and the manual review checklist.
 
 ## Optional browser regression checks
 
@@ -102,4 +115,4 @@ rtk proxy node tools/check-ui.mjs
 
 Use `LAB_URL` and `CDP_URL` to override the server/debugger addresses. Set `LAB_FILE` to an absolute `file:///…/index.html` URL to also check startup from disk. `UPDATE_SCREENSHOTS=1` explicitly refreshes the two manifest screenshots. Do not expose the browser debugging port to a network.
 
-The checks cover the prediction experiment and restoration, undo and reset, attack filters, the map text, modeled attacks and playback, LTR/RTL tab keys, five viewport widths in both themes/languages, mobile tool access, form validation, friend provisioning, and offline reload. At 1440px, they also exercise both edge handles in English/Persian through open → closed → open, checking text visibility, localized action labels, expansion/inert state, minimum width, and center-point pointer reachability with dispatched mouse input. They do not replace screen-reader, real-device, zoom, or usability testing; panel keyboard activation, saved-state reload, and animated/breakpoint transitions still need targeted manual review. See [UI-UX-RESEARCH.md](UI-UX-RESEARCH.md) for the rationale and remaining validation needs.
+The checks cover the prediction experiment and restoration, undo and reset, attack filters, the map text, modeled attacks and playback, LTR/RTL tab keys, five viewport widths in both themes/languages, mobile tool access, form validation, friend provisioning, and offline reload. Language checks exercise native keyboard selection/focus, the real change handler, registry-generated options (including a temporary third language), configuration and experiment preservation, saved preference/URL precedence, target geometry, and offline/disk switching (`LAB_FILE` required for disk). At 1440px, they also exercise both edge handles in English/Persian through open → closed → open, checking text visibility, localized action labels, expansion/inert state, minimum width, and center-point pointer reachability with dispatched mouse input. They do not replace screen-reader, real-device/native mobile picker, zoom, or usability testing; panel keyboard activation, saved-state reload, and animated/breakpoint transitions still need targeted manual review. See [UI-UX-RESEARCH.md](UI-UX-RESEARCH.md) for the rationale and remaining validation needs.

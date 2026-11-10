@@ -437,15 +437,19 @@ pre.cfg .c { color: #7f95ab; }
   .pane.walls > *, .pane.side > * { width: auto; min-width: 0; }
 }
 
-/* ---------- language switch ---------- */
-.langbtn {
-  display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 12px; border-radius: 8px;
-  border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-weight: 700; font-size: 13px; flex: none;
+/* ---------- native language selector ---------- */
+.lang-picker { position: relative; flex: none; max-inline-size: 180px; }
+.lang-picker > svg {
+  position: absolute; inset-inline-start: 10px; top: 50%; transform: translateY(-50%);
+  width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.8; pointer-events: none;
 }
-.langbtn:hover { border-color: var(--accent); }
-.langbtn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-#langTxt { font-family: "Inter", sans-serif; }
-#langTxt[data-script="arab"] { font-family: "Vazirmatn", sans-serif; }
+#langSelect {
+  height: 44px; min-inline-size: 112px; max-inline-size: 180px; padding-inline: 32px 8px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer;
+}
+#langSelect:hover { border-color: var(--accent); }
+#langSelect option { font-family: "Inter", sans-serif; }
+#langSelect option[data-script="arab"] { font-family: "Vazirmatn", sans-serif; }
 
 /* ---------- Arabic-script typography (including Persian) ---------- */
 html[data-script="arab"] body,
@@ -492,10 +496,11 @@ pre.cfg, .term { text-align: left; }
   [dir="rtl"] .main.hide-l .pane.walls, [dir="rtl"] .main.hide-r .pane.side { transform: none; }
 }
 @media (max-width: 640px) {
-  .langbtn { padding: 0 10px; height: 44px; }
-  .langbtn svg { display: none; }
-  .langbtn #langTxt { font-size: 0; }
-  .langbtn #langTxt::after { content: attr(data-short); font-size: 13px; }
+  .lang-picker { max-inline-size: 128px; }
+  .lang-picker > svg { display: none; }
+  #langSelect { min-inline-size: 92px; max-inline-size: 128px; padding-inline: 6px; }
+  .sel-wrap { flex: 0 1 auto; }
+  select.preset { inline-size: 100%; }
   .brand > div:last-child { display: none; }
   .brand .logo { display: grid !important; }
   .score .ring { display: none !important; }
@@ -504,7 +509,7 @@ pre.cfg, .term { text-align: left; }
 }
 
 /* language swap animation */
-.app.swap .main, .app.swap .top > *:not(.langbtn) { animation: swapfade .5s ease; }
+.app.swap .main, .app.swap .top > *:not(.lang-picker) { animation: swapfade .5s ease; }
 @keyframes swapfade { from { opacity: .25; filter: blur(2px); } to { opacity: 1; filter: none; } }
 @media (prefers-reduced-motion: reduce) { .app.swap .main, .app.swap .top > * { animation: none; } }
 

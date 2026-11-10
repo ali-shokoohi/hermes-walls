@@ -31,7 +31,6 @@ var store = (function () {
 var I18N = window.HWL_I18N, LANG = R.lang;
 function LM(lang) { return I18N.langs[lang || LANG]; }
 function isRTL() { return LM().dir === "rtl"; }
-function nextLang() { var langs = Object.keys(I18N.langs); return langs[(langs.indexOf(LANG) + 1) % langs.length]; }
 function Msg(key, params) { this.key = key; this.params = params || {}; }
 function K(key, params) { return new Msg(key, params); }
 function N(x, lang) {
@@ -1467,17 +1466,26 @@ function syncInert() {
 if (mqNarrow.addEventListener) mqNarrow.addEventListener("change", function () { setView(appEl.getAttribute("data-view") || "map"); });
 
 /* ------------------------------------------------------------------ language */
+function syncLanguageSelect() {
+  var select = $("langSelect"), codes = Object.keys(I18N.langs);
+  /* Build once per registry change; keep the focused native control and its options. */
+  if (select.options.length !== codes.length || codes.some(function (code, i) { return select.options[i].value !== code; })) {
+    select.textContent = "";
+    codes.forEach(function (code) {
+      var meta = LM(code), option = el("option", { value: code, lang: code, dir: meta.dir, "data-script": meta.script || "" });
+      option.textContent = meta.name;
+      select.appendChild(option);
+    });
+  }
+  select.value = LANG;
+  select.setAttribute("aria-label", S("languageLabel"));
+  select.title = S("languageLabel");
+}
 function applyStatic() {
   D.querySelectorAll("[data-i18n]").forEach(function (n) { n.innerHTML = H(STR[n.getAttribute("data-i18n")]); });
   D.querySelectorAll("[data-i18n-html]").forEach(function (n) { n.innerHTML = T(STR[n.getAttribute("data-i18n-html")]); });
   D.querySelectorAll("#preset option").forEach(function (o) { o.textContent = S(o.getAttribute("data-i18n")); });
-  var target = LM(nextLang());
-  $("langTxt").textContent = target.name;
-  $("langTxt").setAttribute("data-short", target.short);
-  $("langTxt").setAttribute("data-script", target.script || "");
-  $("langTxt").dir = target.dir;
-  $("langBtn").setAttribute("aria-label", target.switchLabel);
-  $("langBtn").title = target.switchLabel;
+  syncLanguageSelect();
   $("themeBtn").setAttribute("aria-label", S("themeAria")); $("themeBtn").title = S("themeAria");
   $("score").title = S("scoreTitle");
   $("resX").setAttribute("aria-label", S("dismiss"));
@@ -1516,7 +1524,7 @@ function setLang(lang, animate) {
   if (dlg.open) { renderSwatches(); dPreview(true); }
   if (animate && !reduced) { var app = D.querySelector(".app"); app.classList.remove("swap"); void app.offsetWidth; app.classList.add("swap"); }
 }
-$("langBtn").addEventListener("click", function () { setLang(nextLang(), true); });
+$("langSelect").addEventListener("change", function () { if (this.value !== LANG) setLang(this.value, true); });
 
 /* ------------------------------------------------------------------ friends: roster, add dialog, live provisioning */
 var ICON = {

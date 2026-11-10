@@ -122,6 +122,23 @@ The [APG Disclosure (Show/Hide) pattern](https://www.w3.org/WAI/ARIA/apg/pattern
 - Handle offsets reuse pane-width variables. An initial logical-inset implementation failed the RTL pointer hit test because the handle uses vertical writing mode; physical horizontal offsets with explicit RTL counterparts corrected that geometry. This is a documented axis-specific exception, not a reason to abandon logical CSS elsewhere.
 - The open handle has a 44×44 CSS-pixel design target. At 1080px and below, desktop handles remain hidden and the existing mobile navigation is unchanged. The deployed UI changes advanced the cache to `walls-lab-v16`; the subsequent documentation/skill updates do not change the runtime shell.
 
+### Follow-up: scalable language selection and translation contributions
+
+Requested on 10 November 2026: replace language cycling with a dropdown and make future contributions easier. Source inspection found that the existing button chooses the next registry entry, not a named destination. That becomes harder to predict with three or more languages; this is a design rationale, not an observed usability-study result. The repository is not indexed by the available code graph, so this follow-up uses targeted source inspection.
+
+Sources retrieved on 10 November 2026:
+
+- [MDN: The HTML select element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/select): native options, selected value, labeling, and browser-provided interaction. Use an ordinary single-select with a localized accessible name rather than a custom ARIA popup. Browser/OS styling and interaction vary; native markup does not establish accessibility conformance.
+- [W3C Internationalization: Using select to link to localized content](https://www.w3.org/International/questions/qa-navigation-select): use native language names, keep the selector near the top, and account for script/font support. It also notes that direct links can be better for a handful of languages. We choose a compact selector for the constrained lab header and requested future growth, not because dropdowns are universally superior. This app changes language in place rather than navigating to another site.
+
+Acceptance criteria and planned verification:
+
+- Display the current language and a native dropdown indicator; list full native names in stable registry order without flags. Generate choices from metadata, including per-option language/direction/script; never require a new language-specific branch in selector logic.
+- Keep focus on the same select after switching, reuse `setLang`, preserve wall/friend configuration and experiment restoration, and retain saved preference, URL precedence, RTL, offline, and direct-disk behavior. Existing language switching still stops playback and resets simulated chat.
+- Keep the control at least 44px high, with visible keyboard focus and no header overflow at 320px. Retain full language names on phones, allowing the scenario control to shrink instead.
+- Add a contributor entry point and a translation checklist covering metadata, catalog registration, placeholders/plurals, script/font support, HTML trust, cache assets, and browser review. Add a dependency-free checker for catalog/registry consistency, placeholders/plurals, load order, and precache registration; test its failure paths as well as current catalogs.
+- Extend browser regression checks for the real change handler, native keyboard selection/focus, registry-generated options (including a temporary third language), state preservation, preference reload/URL override, layout, offline switching, and disk switching. Refresh install screenshots intentionally. Record executed results separately below; screen readers, real mobile pickers, and cross-browser behavior remain manual follow-up.
+
 ## 6. Verification record
 
 Executed on 10 November 2026 with headless Chromium and Node's built-in CDP/WebSocket client (`tools/check-ui.mjs`), reduced motion enabled, served over `localhost`, plus a direct `file://` startup check. No dependency or build step was added to the app.
@@ -143,6 +160,15 @@ Executed on 10 November 2026 with headless Chromium and Node's built-in CDP/WebS
 | Visual review | Wide English experiment card with prediction buttons and phone Persian filter/empty state reviewed; a redundant "showing 0" status was removed as a result. |
 
 These are bounded automated and screenshot checks, not a claim of WCAG conformance, perceptual contrast auditing, cross-browser coverage, or demonstrated learning gains.
+
+### Language-selector follow-up verification (10 November 2026)
+
+- The unchanged browser regression suite passed before implementation. After the change, the extended `tools/check-ui.mjs` passed with `LAB_FILE` enabled: native ArrowDown/Enter selection into Persian and ArrowUp/Enter back to English retained select focus; the actual change handler selected a temporary third registry language; options matched registry names/language/direction; wall/friend configuration and experiment restoration survived switching; saved preference and explicit URL override worked.
+- English/Persian × five widths (320, 390, 768, 1280, 1440px) × light/dark passed document/header/panel overflow checks. The selector's current value, ≥44px target dimensions, viewport bounds, and center-point hit test passed in all 20 combinations. The existing panel, model/playback, tools, dialogs, and offline regressions also passed. Cached offline and direct `file://` language switching passed.
+- `tools/check-i18n.mjs` passed two registered languages / 547 source keys with no fallback warnings. Eleven Node tests passed, covering accepted translations, malformed messages, opt-in partial catalogs, actual repository registration, and fixture failures for cache/script omission, deferred/late registry, invalid direction, wrong catalog registration, and syntax errors. Classic app syntax and `git diff --check` passed.
+- Refreshed and visually reviewed the 1440×900 wide and 780×1688 narrow manifest screenshots. Separately reviewed the Persian dark UI at 320px: full native name, native arrow, and blue focus outline were visible. A targeted CDP Tab/Shift+Tab check found selector focus, `:focus-visible`, a 3px outline, and the same option node retained across language switches.
+- Runtime cache advanced to `walls-lab-v17`. Development guides/checks remain outside the offline shell. No runtime dependencies or network services were added.
+- Limits: Chromium/Linux only; no screen-reader, real-device/mobile picker, other-browser, zoom/forced-colors, new-script font coverage, or subpath-deployment test was executed for this follow-up. The synthetic third language tests registration/selection, not a real translation's quality or layout. The checker does not detect duplicate JavaScript object keys, untranslated source copies, unsafe HTML, or all possible metadata mistakes. Research references guide the interaction choice; no usability or learning-effectiveness claim follows from these checks.
 
 ## 7. Manual follow-up and limits
 

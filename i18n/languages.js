@@ -1,11 +1,11 @@
 /* Register languages here; load their catalogs before js/app.js. */
 (function () {
   var langs = {
-    en: { name: "English", short: "EN", dir: "ltr", switchLabel: "English version" },
+    en: { name: "English", dir: "ltr" },
     fa: {
-      name: "فارسی", short: "فا", dir: "rtl", script: "arab",
+      name: "فارسی", dir: "rtl", script: "arab",
       font: "Vazirmatn, sans-serif", digits: "۰۱۲۳۴۵۶۷۸۹", decimal: "٫",
-      pace: 1.15, switchLabel: "نسخهٔ فارسی"
+      pace: 1.15
     }
   };
   window.HWL_I18N = { langs: langs, strings: {} };

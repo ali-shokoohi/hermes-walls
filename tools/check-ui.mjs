@@ -36,6 +36,7 @@ async function navigate(url) {
   await pause(300);
 }
 const click = selector => run(`document.querySelector(${JSON.stringify(selector)}).click()`);
+const selectLanguage = lang => run(`(() => { const s=document.getElementById('langSelect'); s.value=${JSON.stringify(lang)}; s.dispatchEvent(new Event('change', { bubbles:true })); })()`);
 const viewport = (width, height = 900, deviceScaleFactor = 1) => cdp("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor, mobile: false });
 async function key(key) { await cdp("Input.dispatchKeyEvent", { type: "keyDown", key }); await cdp("Input.dispatchKeyEvent", { type: "keyUp", key }); }
 async function screenshot(path) { const shot = await cdp("Page.captureScreenshot", { format: "png" }); await writeFile(path, Buffer.from(shot.data, "base64")); }
@@ -46,6 +47,39 @@ try {
   await navigate(origin + "/?lang=en");
   await run("localStorage.clear()");
   await navigate(origin + "/?lang=en");
+  // Exercise the native selector rather than only the exposed setLang helper.
+  assert.deepEqual(await run("Array.from(document.getElementById('langSelect').options, o => [o.value,o.textContent,o.lang,o.dir])"), await run("Object.entries(HWL_I18N.langs).map(([code,m]) => [code,m.name,code,m.dir])"));
+  await click('.wall[data-wall="gvisor"] input');
+  const beforeLanguage = await run("JSON.stringify({ walls:__lab.C, friends:__lab.friends() })");
+  await run("document.getElementById('langSelect').focus()");
+  await key("ArrowDown"); await key("Enter");
+  await until("document.documentElement.lang === 'fa'");
+  assert.equal(await run("document.activeElement.id"), "langSelect", "keyboard switch retains focus");
+  assert.equal(await run("document.getElementById('langSelect').getAttribute('aria-label')"), "زبان");
+  assert.equal(await run("JSON.stringify({ walls:__lab.C, friends:__lab.friends() })"), beforeLanguage, "language preserves walls and friends");
+  assert.equal(await run("JSON.parse(localStorage.getItem('hermes-walls-lab-v1')).lang"), "fa");
+  await navigate(origin + "/");
+  assert.equal(await run("document.getElementById('langSelect').value"), "fa", "saved preference on bare URL");
+  assert.equal(await run("document.documentElement.dir"), "rtl");
+  await navigate(origin + "/?lang=en");
+  assert.equal(await run("document.getElementById('langSelect').value"), "en", "URL overrides saved preference");
+  // A synthetic third catalog verifies registry-driven growth without shipping a fake language.
+  const registeredCodes = await run("Object.keys(HWL_I18N.langs)");
+  const testCode = await run("Array.from({length:26}, (_,i) => 'qa'+String.fromCharCode(97+i)).find(code => !Object.hasOwn(HWL_I18N.langs,code))");
+  assert.ok(testCode, "unused private-use language code for fixture");
+  await run(`HWL_I18N.langs[${JSON.stringify(testCode)}]={name:'Deutsch',dir:'ltr'}; HWL_I18N.strings[${JSON.stringify(testCode)}]={...HWL_I18N.strings.en,languageLabel:'Sprache'}; __lab.setLang('en')`);
+  assert.deepEqual(await run("Array.from(document.getElementById('langSelect').options, o => o.value)"), [...registeredCodes, testCode]);
+  await selectLanguage(testCode);
+  assert.equal(await run("document.documentElement.lang"), testCode);
+  assert.equal(await run("document.getElementById('langSelect').getAttribute('aria-label')"), "Sprache");
+  await selectLanguage("fa");
+  await run("document.getElementById('langSelect').focus()");
+  await key("ArrowUp"); await key("Enter");
+  assert.equal(await run("document.documentElement.lang"), "en", "RTL keyboard return selection");
+  assert.equal(await run("document.activeElement.id"), "langSelect");
+  await run(`delete HWL_I18N.langs[${JSON.stringify(testCode)}]; delete HWL_I18N.strings[${JSON.stringify(testCode)}]; __lab.setLang('en')`);
+  await click('.wall[data-wall="gvisor"] input');
+  console.log("PASS native language keyboard/change selection, focus, state, preference/URL precedence, third-language registry growth");
   // Edge handles stay reachable for both collapse and reopen, in either direction.
   for (const lang of ["en", "fa"]) {
     await run(`__lab.setLang(${JSON.stringify(lang)})`);
@@ -78,6 +112,7 @@ try {
   await click("#predThrough");
   assert.notEqual(await run("JSON.stringify(__lab.C)"), original, "comparison removes a wall");
   assert.match(await run("document.getElementById('learnText').textContent"), /prediction|predicted/, "prediction feedback");
+  await selectLanguage("fa"); await selectLanguage("en");
   await click("#learnRestore");
   assert.equal(await run("JSON.stringify(__lab.C)"), original, "restore returns exact configuration");
   assert.equal(await run("document.getElementById('learnRestore').hidden"), true);
@@ -135,11 +170,13 @@ try {
           return { page: document.documentElement.scrollWidth, viewport: innerWidth, header: top.scrollWidth, headerWidth: top.clientWidth,
             tabs: Array.from(document.querySelectorAll('.tab')).every(t => document.getElementById(t.getAttribute('aria-controls'))),
             primary: Array.from(document.querySelectorAll('#mtabs button')).every(b => b.getBoundingClientRect().height >= 44),
-            panes: ['vWalls','tp-attacks'].every(id => { const p = document.getElementById(id); return !p.clientWidth || p.scrollWidth <= p.clientWidth + 1; }) };
+            panes: ['vWalls','tp-attacks'].every(id => { const p = document.getElementById(id); return !p.clientWidth || p.scrollWidth <= p.clientWidth + 1; }),
+            language: (() => { const s=document.getElementById('langSelect'), r=s.getBoundingClientRect(); return r.height>=44 && r.width>=44 && r.left>=0 && r.right<=innerWidth && document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===s && s.value===document.documentElement.lang; })() };
         })()`);
         assert.ok(metrics.page <= width + 1, `${lang}/${width}/${theme} document overflow: ${JSON.stringify(metrics)}`);
         assert.ok(metrics.header <= metrics.headerWidth + 1, `${lang}/${width}/${theme} header overflow: ${JSON.stringify(metrics)}`);
         assert.equal(metrics.tabs, true);
+        assert.equal(metrics.language, true, `${lang}/${width}/${theme} language target/value`);
         assert.equal(metrics.panes, true, `${lang}/${width}/${theme} pane overflow`);
         if (width <= 1080) {
           assert.equal(metrics.primary, true);
@@ -214,6 +251,9 @@ try {
   await cdp("Network.emulateNetworkConditions", { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
   await navigate(origin + "/?lang=fa");
   assert.equal(await run("document.documentElement.dir"), "rtl");
+  await selectLanguage("en");
+  assert.equal(await run("document.documentElement.dir"), "ltr", "offline language switch");
+  await selectLanguage("fa");
   await click(".atk"); await until("!document.getElementById('attackNext').disabled"); await click("#attackStop");
   await cdp("Network.emulateNetworkConditions", { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
   console.log("PASS offline cached navigation and manual playback");
@@ -229,6 +269,10 @@ try {
   if (process.env.LAB_FILE) {
     await navigate(process.env.LAB_FILE);
     assert.equal(await run("__lab.ATTACKS.length"), 15);
+    await selectLanguage("fa");
+    assert.equal(await run("document.documentElement.dir"), "rtl");
+    await selectLanguage("en");
+    assert.equal(await run("document.documentElement.dir"), "ltr");
     console.log("PASS direct file startup");
   }
   assert.deepEqual(errors, [], "browser runtime exceptions");
