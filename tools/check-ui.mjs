@@ -46,12 +46,38 @@ try {
   await navigate(origin + "/?lang=en");
   await run("localStorage.clear()");
   await navigate(origin + "/?lang=en");
+  // Edge handles stay reachable for both collapse and reopen, in either direction.
+  for (const lang of ["en", "fa"]) {
+    await run(`__lab.setLang(${JSON.stringify(lang)})`);
+    for (const side of ["L", "R"]) {
+      const handle = "edge" + side, pane = side === "L" ? "vWalls" : "vSide";
+      for (let step = 0; step < 3; step++) {
+        const expanded = step !== 1;
+        assert.equal(await run(`document.getElementById('${handle}').getAttribute('aria-expanded')`), String(expanded));
+        assert.equal(await run(`getComputedStyle(document.querySelector('#${handle} span')).display === 'none'`), expanded, "panel name only shown for reopen");
+        assert.equal(await run(`document.getElementById('${pane}').hasAttribute('inert')`), !expanded);
+        const point = await run(`(() => { const b=document.getElementById('${handle}'), r=b.getBoundingClientRect(); return { x:r.x+r.width/2, y:r.y+r.height/2, width:r.width, hit:b.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)) }; })()`);
+        assert.ok(point.width >= 44 && point.hit, `edge handle is visible and pointer-reachable: ${lang}/${handle}/${step} ${JSON.stringify(point)}`);
+        const action = lang === "en" ? (expanded ? "Hide" : "Show") : (expanded ? "پنهان" : "نمایش");
+        assert.ok(await run(`document.getElementById('${handle}').getAttribute('aria-label').includes(${JSON.stringify(action)})`), "localized next action");
+        if (step === 2) break;
+        await cdp("Input.dispatchMouseEvent", { type: "mousePressed", x: point.x, y: point.y, button: "left", clickCount: 1 });
+        await cdp("Input.dispatchMouseEvent", { type: "mouseReleased", x: point.x, y: point.y, button: "left", clickCount: 1 });
+        await pause(100);
+      }
+    }
+  }
+  await run("__lab.setLang('en')");
+  console.log("PASS bilingual edge handles collapse/reopen with pointer hit testing and panel state");
   const original = await run("JSON.stringify(__lab.C)");
   await click("#learnRun");
   await until("document.querySelector('#result.blocked, #result.contained') !== null");
   assert.equal(await run("JSON.stringify(__lab.C)"), original, "baseline preserves settings");
-  await click("#learnRun");
+  assert.equal(await run("document.getElementById('learnPredict').hidden"), false, "prediction is requested");
+  assert.equal(await run("document.getElementById('learnRun').hidden"), true, "no rerun before a prediction");
+  await click("#predThrough");
   assert.notEqual(await run("JSON.stringify(__lab.C)"), original, "comparison removes a wall");
+  assert.match(await run("document.getElementById('learnText').textContent"), /prediction|predicted/, "prediction feedback");
   await click("#learnRestore");
   assert.equal(await run("JSON.stringify(__lab.C)"), original, "restore returns exact configuration");
   assert.equal(await run("document.getElementById('learnRestore').hidden"), true);
@@ -60,6 +86,29 @@ try {
   assert.match(await run("document.getElementById('learnText').textContent"), /already gets through/);
   await click("#learnRestore");
   await run("__lab.applyPreset('hardened'); __lab.changed()");
+  // Undo restores a single wall change; reset turns every wall back on.
+  await click('.wall[data-wall="gvisor"] input');
+  assert.equal(await run("__lab.C.gvisor"), false);
+  assert.match(await run("document.getElementById('mapTextList').textContent"), /Off:/, "map text reflects disabled defenses");
+  assert.equal(await run("document.querySelector('#toast.on button') !== null"), true, "undo offered");
+  await click("#toast button");
+  assert.equal(await run("JSON.stringify(__lab.C)"), original, "undo restores configuration");
+  await run("__lab.applyPreset('bare'); __lab.changed()");
+  await click("#wallsReset");
+  assert.equal(await run("JSON.stringify(__lab.C)"), original, "reset turns all walls on");
+  assert.equal(await run("document.getElementById('wallsReset').disabled"), true, "reset disabled when all walls are on");
+  await click("#toast button");
+  assert.ok(await run("Object.values(__lab.C).every(v => !v)"), "reset can be undone");
+  await run("__lab.applyPreset('hardened'); __lab.changed()");
+  // Outcome filter with empty state.
+  await click('#atkFilter [data-filter="breached"]');
+  assert.equal(await run("document.getElementById('atkEmpty').hidden"), false, "empty filter explains itself");
+  await click("#atkShowAll");
+  assert.equal(await run("document.querySelectorAll('#atkList .atk:not([hidden])').length"), 15);
+  assert.ok(await run("document.getElementById('mapTextList').children.length >= 3"), "map text alternative");
+  assert.equal(await run("document.querySelector('svg.map').getAttribute('aria-describedby')"), "mapTextHint");
+  assert.equal(await run("document.querySelector('.wall input').getAttribute('role')"), "switch");
+  assert.ok(await run("document.getElementById(document.querySelector('.wall input').getAttribute('aria-describedby')) !== null"), "switch description exists");
   const outcomes = await run("__lab.ATTACKS.map(a => __lab.simulate(a.id).outcome)");
   assert.equal(outcomes.length, 15); assert.ok(outcomes.every(o => o === "blocked" || o === "contained"));
   await run("document.querySelector('.tab[data-tab=attacks]').focus()");
@@ -72,7 +121,7 @@ try {
   await run("__lab.setLang('fa'); document.querySelector('.tab[data-tab=attacks]').focus()");
   await key("ArrowLeft");
   assert.equal(await run("document.activeElement.dataset.tab"), "friends", "RTL arrow order");
-  console.log("PASS experiment baseline/compare/restore, no-wall path, 15 hardened outcomes, LTR/RTL tabs");
+  console.log("PASS experiment predict/compare/restore, no-wall path, undo, reset, filters, map text, 15 hardened outcomes, LTR/RTL tabs");
 
   for (const lang of ["en", "fa"]) {
     await run(`__lab.setLang(${JSON.stringify(lang)})`);
@@ -173,7 +222,7 @@ try {
   if (process.env.UPDATE_SCREENSHOTS === "1") {
     await navigate(origin + "/?lang=en");
     await run("localStorage.clear()"); await navigate(origin + "/?lang=en");
-    await viewport(1440); await pause(500); await screenshot("screenshots/wide.png");
+    await viewport(1440); await run("document.getElementById('toast').classList.remove('on')"); await pause(500); await screenshot("screenshots/wide.png");
     await viewport(390, 844, 2); await run("__lab.openAdd()"); await pause(400);
     await screenshot("screenshots/narrow.png");
   }

@@ -22,6 +22,12 @@ Most messages are escaped as text. Keys used by `data-i18n-html` intentionally c
 
 The simulated chat recognizes command/URL keywords. Keep commands and URLs in `quick.*` messages intact; translating a greeting or other natural-language quick action may also require adding its keywords to `chat()` in `js/app.js`.
 
+### Stateful panel labels
+
+`edgeL` and `edgeR` name the panels on their collapsed reopen handles. Their visible spans are intentionally hidden while the panels are open; do not remove the translations or replace accessible names with empty strings. `hideWalls` / `showWalls` and `hideTools` / `showTools` describe the next action for both header and edge controls. `syncPanelButtons(side)` refreshes those labels and tooltips when state or language changes.
+
+Check both open and closed states after switching languages, including while a panel is already collapsed. In RTL, Walls and Tools swap physical edges, but their identity and action wording stay the same; translate meaning rather than embedding left/right instructions. Verify Persian arrows, visible panel names, and accessible labels together.
+
 ## Add a language
 
 1. Copy `en.js` to a new file, for example `ar.js`. Change its assignment to `window.HWL_I18N.strings.ar = { ... }` and translate values. Keep keys/placeholders. Missing keys fall back to English (including plural forms).

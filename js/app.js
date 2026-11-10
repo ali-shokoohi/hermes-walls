@@ -7,7 +7,13 @@ function el(tag, attrs, html) { var e = D.createElement(tag); if (attrs) for (va
 function sv(tag, attrs) { var e = D.createElementNS(SVGNS, tag); if (attrs) for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var motionQuery = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
+var reduced = !!(motionQuery && motionQuery.matches);
+if (motionQuery) {
+  var onMotionChange = function (e) { reduced = e.matches; };
+  if (motionQuery.addEventListener) motionQuery.addEventListener("change", onMotionChange);
+  else if (motionQuery.addListener) motionQuery.addListener(onMotionChange);
+}
 
 /* ------------------------------------------------------------------ storage */
 var KEY = "hermes-walls-lab-v1";
@@ -257,7 +263,8 @@ function renderMap(force) {
   layoutName = name; builtLang = LANG; builtSig = sig; L = buildLayout(name, width);
   stopPlayback();
   host.innerHTML = "";
-  svg = sv("svg", { "class": "map", viewBox: L.vb.join(" "), role: "group", direction: "ltr", "aria-label": S("mapAria") });
+  svg = sv("svg", { "class": "map", viewBox: L.vb.join(" "), role: "group", direction: "ltr", "aria-label": S("mapAria"), "aria-describedby": "mapTextHint" });
+  syncMapText();
   var gZones = sv("g"); gEdges = sv("g"); gTrails = sv("g"); gNodes = sv("g"); gFx = sv("g");
   svg.appendChild(gZones); svg.appendChild(gEdges); svg.appendChild(gTrails); svg.appendChild(gNodes); svg.appendChild(gFx);
   zoneEls = {}; nodeEls = {};
@@ -385,6 +392,24 @@ function paintState() {
     var hm = nodeEls["hermes-" + f.id];
     if (hm) hm.classList.toggle("key", !C.proxyTokens);
   });
+}
+/* Text alternative for the diagram, visible to everyone (W3C complex images). */
+function syncMapText() {
+  var ul = $("mapTextList"); if (!ul) return;
+  function wallsLine(ws) {
+    var on = ws.filter(function (w) { return C[w]; }), off = ws.filter(function (w) { return !C[w]; });
+    return S("mapTextWalls", { on: on.length, total: ws.length }) + (off.length ? " " + S("mapTextOff", { walls: off.map(function (w) { return T(WBY[w].n); }).join(S("listSep")) }) : "");
+  }
+  var items = [];
+  items.push("<b>" + H(NODES.host.t) + "</b> · " + H(wallsLine(HOST_WALLS)));
+  FRIENDS.forEach(function (f) {
+    var sub = [
+      ["iron-proxy@" + f.id, PROXY_WALLS], ["hermes-" + f.id, HERMES_WALLS], ["sandbox-" + f.id, SANDBOX_WALLS], ["br-" + f.id, BRIDGE_WALLS]
+    ].map(function (p) { return '<li><bdi dir="ltr">' + esc(p[0]) + "</bdi> · " + H(wallsLine(p[1])) + "</li>"; }).join("");
+    items.push("<b>" + H(S("mapTextFriend", { name: T(f.name) })) + "</b><ul>" + sub + "</ul>");
+  });
+  items.push(H(S("mapTextExternal")));
+  ul.innerHTML = items.map(function (x) { return x.indexOf("<li>") === 0 ? x : "<li>" + x + "</li>"; }).join("");
 }
 
 /* ------------------------------------------------------------------ simulation engine */
@@ -622,23 +647,23 @@ function renderWalls() {
   var host = $("wallList"); host.innerHTML = "";
   [1, 2, 3, 4, 5, 6].forEach(function (Ln) {
     var ws = WALLS.filter(function (w) { return w.L === Ln; });
-    var box = el("section", { "class": "layer", "data-layer": Ln });
+    var box = el("section", { "class": "layer", "data-layer": Ln, role: "group", "aria-labelledby": "layer-t-" + Ln });
     var h = el("div", { "class": "layer-h" });
-    h.innerHTML = '<span class="ln">' + N(Ln) + '</span><span class="lt">' + H(LAYERS[Ln]) + '</span><span class="lc"></span>';
+    h.innerHTML = '<span class="ln" aria-hidden="true">' + N(Ln) + '</span><span class="lt" id="layer-t-' + Ln + '">' + H(LAYERS[Ln]) + '</span><span class="lc"></span>';
     var all = el("button", { type: "button", "class": "lall", "aria-label": S("layerToggle", { n: Ln }) }, H(STR.all));
     all.addEventListener("click", function () {
-      var anyOff = ws.some(function (w) { return !C[w.id]; });
+      var before = snapshotConfig(), anyOff = ws.some(function (w) { return !C[w.id]; });
       ws.forEach(function (w) { C[w.id] = anyOff; });
-      changed(S(anyOff ? "layerOn" : "layerOff", { n: Ln }));
+      changed(S(anyOff ? "layerOn" : "layerOff", { n: Ln }), before);
     });
     h.appendChild(all);
     box.appendChild(h);
     ws.forEach(function (w) {
       var row = el("label", { "class": "wall", "data-wall": w.id });
-      row.innerHTML = '<span class="wn">' + H(w.n) + '</span><span class="sw"><input type="checkbox" aria-label="' + esc(T(w.n)) + '"><i></i></span>' +
-        '<span class="wd">' + H(w.d) + ' <em>' + H(REF(w.ref)) + '</em></span>';
+      row.innerHTML = '<span class="wn">' + H(w.n) + '</span><span class="sw"><input type="checkbox" role="switch" aria-label="' + esc(T(w.n)) + '" aria-describedby="wd-' + w.id + '"><i></i></span>' +
+        '<span class="wd" id="wd-' + w.id + '">' + H(w.d) + ' <em>' + H(REF(w.ref)) + '</em></span>';
       var cb = row.querySelector("input");
-      cb.addEventListener("change", function () { C[w.id] = cb.checked; changed((cb.checked ? S("onX") : S("offX")) + T(w.n)); });
+      cb.addEventListener("change", function () { setWall(w.id, cb.checked); });
       row.addEventListener("mouseenter", function () { focusWall(w.id, true); });
       row.addEventListener("mouseleave", function () { focusWall(w.id, false); });
       row.addEventListener("focusin", function () { focusWall(w.id, true); });
@@ -664,7 +689,20 @@ function syncWalls() {
   });
   var offCount = WALLS.filter(function (w) { return !C[w.id]; }).length;
   var dot = $("mWallDot"); dot.hidden = offCount === 0; dot.textContent = N(offCount);
+  $("wallsReset").disabled = offCount === 0;
 }
+function snapshotConfig() { var copy = {}; Object.keys(C).forEach(function (id) { copy[id] = C[id]; }); return copy; }
+function setConfig(cfg) { Object.keys(cfg).forEach(function (id) { C[id] = cfg[id]; }); }
+function setWall(id, on) {
+  var before = snapshotConfig();
+  C[id] = on;
+  changed((on ? S("onX") : S("offX")) + T(WBY[id].n), before);
+}
+$("wallsReset").addEventListener("click", function () {
+  var before = snapshotConfig();
+  applyPreset("hardened");
+  changed(S("fullRestored"), before);
+});
 function focusWall(id, on) {
   Object.keys(nodeEls).forEach(function (n) { if (NODES[n].walls && NODES[n].walls.indexOf(id) >= 0) nodeEls[n].classList.toggle("focus", on); });
   Object.keys(zoneEls).forEach(function (z) { if (ZONES[z].walls && ZONES[z].walls.indexOf(id) >= 0) zoneEls[z].classList.toggle("focus", on); });
@@ -704,10 +742,37 @@ function scoreAll(silent) {
   $("ringFg").setAttribute("stroke-dashoffset", String(87.96 * (1 - stopped / tot)));
   $("ringFg").style.stroke = n.breached === 0 ? (n.contained ? "var(--warn)" : "var(--ok)") : "var(--bad)";
   var dot = $("mAtkDot"); dot.hidden = n.breached === 0; dot.textContent = N(n.breached);
-  if (!silent && lastScores && n.breached > lastScores.breached) toast(S("moreThrough", { n: n.breached - lastScores.breached }));
-  else if (!silent && lastScores && n.breached < lastScores.breached) toast(S("restored", { n: lastScores.breached - n.breached }));
+  var delta = "";
+  if (lastScores && n.breached > lastScores.breached) delta = S("moreThrough", { n: n.breached - lastScores.breached });
+  else if (lastScores && n.breached < lastScores.breached) delta = S("restored", { n: lastScores.breached - n.breached });
+  if (!silent && delta) toast(delta);
   lastScores = n;
+  applyAttackFilter();
+  return delta;
 }
+var attackFilter = "all";
+function applyAttackFilter() {
+  var shown = 0;
+  D.querySelectorAll("#atkFilter [data-filter]").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-filter") === attackFilter ? "true" : "false"); });
+  $("nA").textContent = N(ATTACKS.length);
+  D.querySelectorAll("#atkList .atk").forEach(function (b) {
+    var show = attackFilter === "all" || b.querySelector(".pill").classList.contains(attackFilter);
+    b.hidden = !show; if (show) shown++;
+  });
+  D.querySelectorAll("#atkList .grp").forEach(function (g) {
+    var n = g.nextElementSibling, any = false;
+    while (n && !n.classList.contains("grp")) { if (!n.hidden) any = true; n = n.nextElementSibling; }
+    g.hidden = !any;
+  });
+  var label = attackFilter === "all" ? "" : S("kind_" + attackFilter);
+  $("atkStatus").textContent = attackFilter === "all" || !shown ? "" : S("filterShowing", { n: shown, kind: label });
+  $("atkEmpty").hidden = shown > 0;
+  $("atkEmptyText").textContent = shown ? "" : S("filterEmpty", { kind: label });
+}
+D.querySelectorAll("#atkFilter [data-filter]").forEach(function (b) {
+  b.addEventListener("click", function () { var f = b.getAttribute("data-filter"); attackFilter = attackFilter === f ? "all" : f; applyAttackFilter(); });
+});
+$("atkShowAll").addEventListener("click", function () { attackFilter = "all"; applyAttackFilter(); D.querySelector('#atkFilter [data-filter="all"]').focus(); });
 
 /* ------------------------------------------------------------------ animation */
 var playToken = 0;
@@ -862,8 +927,8 @@ function launch(id) {
 function resultTitle(s) { return s.outcome === "blocked" ? S("blockedBy") + wname(s.wall) : s.outcome === "contained" ? S("containedBy") + wname(s.wall) : S("breached"); }
 function finishResult(id, s) {
   var acts = [{ t: STR.aReplay, f: function () { launch(id); } }, { t: STR.aTrace, f: function () { setView("trace"); } }];
-  if (s.outcome !== "breached" && s.wall) acts.unshift({ t: STR.aOff, primary: true, f: function () { C[s.wall] = false; changed(S("offX") + T(WBY[s.wall].n)); launch(id); } });
-  else if (s.outcome === "breached") acts.unshift({ t: STR.aRestore, primary: true, f: function () { applyPreset("hardened"); changed(S("fullRestored")); launch(id); } });
+  if (s.outcome !== "breached" && s.wall) acts.unshift({ t: STR.aOff, primary: true, f: function () { setWall(s.wall, false); launch(id); } });
+  else if (s.outcome === "breached") acts.unshift({ t: STR.aRestore, primary: true, f: function () { var before = snapshotConfig(); applyPreset("hardened"); changed(S("fullRestored"), before); launch(id); } });
   showResult(s.outcome, resultTitle(s), TX(s.summary), acts);
 }
 function renderTrace(title, s) {
@@ -1004,7 +1069,7 @@ function inspect(id) {
   box.setAttribute("aria-labelledby", "inspectorTitle");
   $("inspX").addEventListener("click", closeInspector);
   box.querySelectorAll("input[data-iw]").forEach(function (cb) {
-    cb.addEventListener("change", function () { var w = cb.getAttribute("data-iw"); C[w] = cb.checked; changed((cb.checked ? S("onX") : S("offX")) + T(WBY[w].n)); inspect(id); });
+    cb.addEventListener("change", function () { setWall(cb.getAttribute("data-iw"), cb.checked); inspect(id); });
   });
   if (bl) $("blastBtn").addEventListener("click", function () {
     playToken++; clearFx(); svg.classList.add("dim");
@@ -1227,10 +1292,31 @@ function syncExperiment() {
     key = experiment.phase === "baseline" ? "learnBaseline" : experiment.phase === "compared" ? "learnCompared" : "learnOpen";
     params = { attack: T(ABY[experiment.id].n), wall: experiment.wall ? wname(experiment.wall) : "", outcome: S("kind_" + experiment.outcome) };
   }
-  $("learnText").textContent = S(key, params);
-  $("learnRun").textContent = S(experiment && experiment.phase === "baseline" ? "learnWeaken" : experiment ? "learnAgain" : "learnStart");
+  var text = S(key, params);
+  if (experiment && experiment.phase === "compared" && experiment.prediction) {
+    var through = experiment.outcome === "breached", guessedThrough = experiment.prediction === "through";
+    text = S(through === guessedThrough ? "predictMatched" : "predictSurprise") + " " + text;
+  }
+  $("learnText").textContent = text;
+  var predicting = !!(experiment && experiment.phase === "baseline");
+  $("learnPredict").hidden = !predicting;
+  $("learnRun").hidden = predicting;
+  $("learnRun").textContent = S(experiment ? "learnAgain" : "learnStart");
   $("learnRestore").hidden = !experiment;
 }
+function commitPrediction(prediction) {
+  if (!experiment || experiment.phase !== "baseline") return;
+  experiment.prediction = prediction;
+  C[experiment.wall] = false;
+  changed(S("offX") + wname(experiment.wall));
+  var compared = simulate(experiment.id);
+  experiment.phase = "compared"; experiment.outcome = compared.outcome;
+  syncExperiment();
+  launch(experiment.id);
+  $("learnRestore").focus();
+}
+$("predStop").addEventListener("click", function () { commitPrediction("stopped"); });
+$("predThrough").addEventListener("click", function () { commitPrediction("through"); });
 function restoreExperiment() {
   if (!experiment) return;
   clearFx();
@@ -1241,33 +1327,37 @@ function restoreExperiment() {
   syncExperiment();
   $("learnText").textContent = S("learnRestored");
 }
+var experimentRound = 0;
 $("learnRun").addEventListener("click", function () {
-  if (experiment && experiment.phase === "baseline") {
-    C[experiment.wall] = false;
-    changed(S("offX") + wname(experiment.wall));
-    var compared = simulate(experiment.id);
-    experiment.phase = "compared"; experiment.outcome = compared.outcome;
-  } else {
-    if (experiment) restoreExperiment();
-    var config = {}, candidate = ATTACKS.filter(function (a) { var s = simulate(a.id); return s.wall && s.outcome !== "breached"; })[0] || ATTACKS[0];
-    Object.keys(C).forEach(function (id) { config[id] = C[id]; });
-    var baseline = simulate(candidate.id);
-    experiment = { config: config, id: candidate.id, wall: baseline.wall, outcome: baseline.outcome, phase: baseline.wall ? "baseline" : "open" };
-  }
+  if (experiment) restoreExperiment();
+  var candidates = ATTACKS.filter(function (a) { var s = simulate(a.id); return s.wall && s.outcome !== "breached"; });
+  var candidate = candidates.length ? candidates[experimentRound++ % candidates.length] : ATTACKS[0];
+  var baseline = simulate(candidate.id);
+  experiment = { config: snapshotConfig(), id: candidate.id, wall: baseline.wall, outcome: baseline.outcome, phase: baseline.wall && baseline.outcome !== "breached" ? "baseline" : "open" };
   syncExperiment();
   launch(experiment.id);
+  var first = $("learnPredict").hidden ? $("learnRestore") : $("predStop");
+  first.focus();
 });
-$("learnRestore").addEventListener("click", restoreExperiment);
-function changed(msg) {
+$("learnRestore").addEventListener("click", function () { restoreExperiment(); $("learnRun").focus(); });
+/* `before` makes the change undoable from the confirmation toast. */
+function changed(msg, before) {
   store.set("cfg", C);
   $("preset").value = matchPreset();
-  syncWalls(); paintState(); scoreAll(); syncFriends();
+  syncWalls(); paintState(); syncFriends(); syncMapText();
+  var delta = scoreAll(!!before);
   if (msg) logEvent("info", msg, "");
   if (inspected) inspect(inspected);
+  if (before) {
+    toast(msg + (delta ? " · " + delta : ""), { t: S("undo"), f: function () {
+      setConfig(before);
+      changed(S("undone"));
+    } });
+  }
 }
 $("preset").addEventListener("change", function () {
-  var v = $("preset").value; applyPreset(v);
-  changed(S("scenarioX") + $("preset").selectedOptions[0].textContent);
+  var v = $("preset").value, before = snapshotConfig(); applyPreset(v);
+  changed(S("scenarioX") + $("preset").selectedOptions[0].textContent, before);
   if (isNarrow()) setView("attacks");
 });
 $("score").addEventListener("click", function () { setView("attacks"); });
@@ -1341,20 +1431,24 @@ D.addEventListener("keydown", function (e) { if (e.key === "Escape") closeInspec
 /* ------------------------------------------------------------------ collapsible side panels */
 var mainEl = $("main");
 function panelOpen(side) { return !mainEl.classList.contains(side === "l" ? "hide-l" : "hide-r"); }
-function setPanel(side, open, quiet) {
-  var cls = side === "l" ? "hide-l" : "hide-r", pane = side === "l" ? $("vWalls") : $("vSide"), btn = side === "l" ? $("togL") : $("togR");
-  mainEl.classList.toggle(cls, !open);
+function syncPanelButtons(side) {
+  var open = panelOpen(side), label = S(side === "l" ? (open ? "hideWalls" : "showWalls") : (open ? "hideTools" : "showTools"));
+  var btn = side === "l" ? $("togL") : $("togR"), edge = side === "l" ? $("edgeL") : $("edgeR");
   btn.setAttribute("aria-pressed", open ? "true" : "false");
-  btn.title = S(side === "l" ? (open ? "hideWalls" : "showWalls") : (open ? "hideTools" : "showTools"));
-  btn.setAttribute("aria-label", btn.title);
+  [btn, edge].forEach(function (b) { b.title = label; b.setAttribute("aria-label", label); b.setAttribute("aria-expanded", open ? "true" : "false"); });
+}
+function setPanel(side, open, quiet) {
+  var cls = side === "l" ? "hide-l" : "hide-r", pane = side === "l" ? $("vWalls") : $("vSide");
+  mainEl.classList.toggle(cls, !open);
+  syncPanelButtons(side);
   if (!isNarrow()) { if (open) pane.removeAttribute("inert"); else pane.setAttribute("inert", ""); }
   var st = store.get("panels", { l: true, r: true }); st[side] = open; store.set("panels", st);
   if (!quiet) toast(S(open ? (side === "l" ? "wallsShown" : "toolsShown") : (side === "l" ? "wallsHidden" : "toolsHidden")));
 }
 $("togL").addEventListener("click", function () { setPanel("l", !panelOpen("l")); });
 $("togR").addEventListener("click", function () { setPanel("r", !panelOpen("r")); });
-$("edgeL").addEventListener("click", function () { setPanel("l", true, true); });
-$("edgeR").addEventListener("click", function () { setPanel("r", true, true); });
+$("edgeL").addEventListener("click", function () { setPanel("l", !panelOpen("l"), true); });
+$("edgeR").addEventListener("click", function () { setPanel("r", !panelOpen("r"), true); });
 D.addEventListener("keydown", function (e) {
   var tag = (e.target.tagName || "").toLowerCase();
   if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable || isNarrow() || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1390,9 +1484,9 @@ function applyStatic() {
   $("sendBtn").setAttribute("aria-label", S("sendAria"));
   $("mtabs").setAttribute("aria-label", S("labNavigation"));
   $("toolNav").setAttribute("aria-label", S("toolNavigation"));
+  $("atkFilter").setAttribute("aria-label", S("filterAria"));
   D.querySelector(".tabs").setAttribute("aria-label", S("toolsHeading"));
-  $("edgeL").setAttribute("aria-label", S("showWalls")); $("edgeR").setAttribute("aria-label", S("showTools"));
-  ["l", "r"].forEach(function (sd) { var b = sd === "l" ? $("togL") : $("togR"); var open = panelOpen(sd); b.title = S(sd === "l" ? (open ? "hideWalls" : "showWalls") : (open ? "hideTools" : "showTools")); b.setAttribute("aria-label", b.title); });
+  ["l", "r"].forEach(syncPanelButtons);
   D.title = S("docTitle");
   setWho(who);
   friendsStatic();

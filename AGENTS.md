@@ -9,7 +9,7 @@ Hermes Walls Lab: a self-contained, bilingual (English / فارسی) static PWA.
 ## Tooling
 
 - **Always prefix shell commands with `rtk`** (for example `rtk git status`, `rtk grep`, `rtk ls`, `rtk read`). It keeps output compact. Run `rtk --help` for the full list of subcommands.
-- Serve locally with `python3 -m http.server 8000` and open `http://localhost:8000`. The service worker and install prompt need `localhost` or HTTPS.
+- Serve locally with `rtk proxy python3 -m http.server 8000` and open `http://localhost:8000`. The service worker and install prompt need `localhost` or HTTPS. Use `rtk proxy` for commands without a dedicated wrapper.
 
 ## Layout
 
@@ -24,6 +24,9 @@ Hermes Walls Lab: a self-contained, bilingual (English / فارسی) static PWA.
 | `sw.js` | Service worker. `VERSION` is the cache name; `SHELL` is the precache list. |
 | `manifest.webmanifest` | Install metadata, shortcuts, screenshots. |
 | `icons/`, `screenshots/` | Binary install assets referenced by the manifest and `sw.js`. |
+| `tools/check-ui.mjs` | Optional Node/CDP browser regression checks; no npm packages. |
+| `UI-UX-RESEARCH.md` | Evidence, design decisions, observed verification, and limits. |
+| `.opencode/skills/research-driven-lab-ux/` | Reusable UX workflow with evidence and panel-control references. |
 
 ### Code map
 
@@ -33,6 +36,8 @@ Hermes Walls Lab: a self-contained, bilingual (English / فارسی) static PWA.
   - `store.get/set`: persisted to `localStorage` under the key `hermes-walls-lab-v1`.
   - `K(key, params)` builds a lazy catalog reference; `T(x)` resolves it for `LANG`. `S(key, params)` resolves immediately. `STR` maps catalog keys to lazy references. `N(x)` formats digits/decimals using language metadata. `isRTL()` checks direction independently of language.
   - `toast(msg, act)`: notifications.
+  - `setWall(id, on)` and `changed(msg, before)`: shared wall mutation/refresh and optional configuration Undo. Keep experiment snapshot restoration separate from transient toast Undo.
+  - `panelOpen(side)`, `setPanel(side, open, quiet)`, `syncPanelButtons(side)`: shared desktop panel state, persistence, and localized header/edge labels. `l` means Walls and `r` means Tools even when RTL swaps their physical positions.
 
 ## Conventions
 
@@ -42,6 +47,8 @@ Hermes Walls Lab: a self-contained, bilingual (English / فارسی) static PWA.
 - Support RTL. Use logical CSS properties and `isRTL()` for layout/arrow keys. Use `data-script` for script-specific fonts, not language-code checks.
 - Keep it accessible: ARIA labels (localized), keyboard handlers for Enter/Space on interactive non-buttons, and `inert` on hidden panels.
 - Global keyboard shortcuts must stay ignored while typing in inputs or holding modifier keys.
+- Keep desktop edge handles inside `#main` but outside the panes made inert. Expanded handles are arrow-only; collapsed handles show the panel name. Preserve localized next-action labels, `aria-controls`, `aria-expanded`, and the shared panel setter for all triggers.
+- Prefer logical CSS, but retain the documented physical horizontal offsets for vertically written edge handles unless replacing them with a verified equivalent. `writing-mode` changes the inline axis; test both RTL and LTR pointer geometry after layout changes. Desktop handles stay hidden at 1080px and below.
 
 ## Releasing changes
 
@@ -49,10 +56,13 @@ Hermes Walls Lab: a self-contained, bilingual (English / فارسی) static PWA.
 - Add any new asset to `SHELL` in `sw.js`, and reference install assets in `manifest.webmanifest`.
 - Keep every path relative (`./…`) so the app works from a subpath.
 - Update `README.md` when you change shortcuts, deep links, or caching behavior.
+- Keep research/verification records and the relevant local skill references aligned with interaction changes. Documentation/skill-only edits do not require a cache bump unless they change cached runtime content; do not add development documentation to `SHELL`.
 
 ## Verifying
 
-There are no automated tests. Check changes manually in a browser over `localhost`, in both languages, at narrow (phone) and wide widths, and once offline (DevTools → Network → Offline) after the service worker has installed.
+Optional automated browser checks live in `tools/check-ui.mjs`. See `README.md` for the local server, disposable Chromium profile, and Node 22+ invocation (`rtk proxy node tools/check-ui.mjs`). The harness clears saved app data on its test origin; keep the debugger loopback-only. `LAB_FILE` adds direct disk startup coverage; only set `UPDATE_SCREENSHOTS=1` when intentionally refreshing manifest screenshots.
+
+Check changes manually in a browser over `localhost`, in both languages, at narrow (phone) and wide widths, and once offline after the service worker has installed. For panel changes, verify both sides, arrow direction, visible label policy, native keyboard activation/focus, saved-state reload, and breakpoint transitions. Existing handle automation checks the 1440px reduced-motion pointer/state cycle, not every interaction path. Record only executed checks; no suite establishes complete accessibility conformance or learning efficacy.
 
 ## Git
 

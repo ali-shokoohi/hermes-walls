@@ -1,129 +1,154 @@
 # Hermes Walls Lab — UI/UX research and redesign
 
-Research date: 10 November 2026. Scope: the complete English/Persian, offline-first security-learning PWA, not a promotional landing page.
+Research date: 10 November 2026 (second round). Scope: the complete English/Persian, offline-first security-learning PWA, not a promotional landing page.
 
 ## 1. Recommendation
 
-Design around one learning loop: **change a defense → run an attack → explain the outcome → compare**. Keep the working architecture, defenses, and attacks visible together on wide screens. On phones, give the three primary activities stable navigation and put secondary tools one clearly labeled level away. Offer an optional, reversible experiment rather than forcing everyone through onboarding.
+Keep the learning loop from round one (**change a defense → run an attack → explain the outcome → compare**), but make the learner **commit to a prediction before the comparison runs**, make direct wall and scenario changes **undoable**, and give the architecture diagram a **text alternative available to everyone**. Make the attack list filterable by outcome so the important result (which modeled attacks breach the setup) is one tap away. Remove remaining visual noise: all-caps labels, weak tab selection cues, and low-contrast state indicators.
 
-This is an evidence-informed design proposal, not proof of improved learning. No interviews, controlled study, or screen-reader user study were performed. Primary-source pages were retrieved directly; the fallback proxy was not needed. Sources accessed on the research date are linked below. Research references are not runtime dependencies.
+This is an evidence-informed design proposal, not proof of improved learning. No interviews, controlled study, or screen-reader user study were performed. The harness search tool returned HTTP 403, so searches and most page retrievals went through the local proxy (`127.0.0.1:10808`); W3C pages were retrieved directly. One source (an MDPI review of Predict–Observe–Explain) was blocked and is not used as evidence. Research references are not runtime dependencies.
 
-## 2. Related products and research
+## 2. What changed since round one
 
-### Interactive simulation: PhET
+Round one (commit `da3f08c`) added the guided experiment, the four-destination phone navigation, ARIA tabs, form-error associations, and a neutral visual system. The second round audited that result against a broader set of sources and found these remaining gaps:
 
-[PhET's research overview](https://phet.colorado.edu/en/research) describes research-informed simulation design, think-aloud interviews (typically four to six per simulation), dynamic feedback, exploration, and implicit scaffolding. It links work including *A Study of Educational Simulations Part II—Interface Design* (Adams et al., 2008) and *Factors promoting engaged exploration with computer simulations* (Podolefsky et al., 2010). This review used the overview, not a full independent review of those papers.
+1. **The experiment told the learner what to do but never asked them to think first.** "Remove that wall & retry" is an observe step without a predict step.
+2. **Wall switches had no undo.** A mis-tap could change the score silently; restoring required remembering the previous state. Only the experiment had a restore path.
+3. **No emergency exit** from a heavily modified setup other than the scenario picker.
+4. **The diagram's information was visual only.** The SVG had a short label but no long description of which walls protect which node.
+5. **The attack list could not be narrowed.** With 15 attacks, the breached ones (the interesting ones after weakening a wall) were scattered across groups.
+6. **Tabs had one selection indicator** (color plus a thin underline). Several headings were all caps.
+7. **Switch "off" tracks and map edges were below 3:1** against their background.
+8. **Reduced motion was read once** at startup; changing the OS setting had no effect until reload.
+9. **Focused controls could sit under the sticky phone navigation.**
 
-**Transfer:** retain the manipulable map and immediate feedback. Introduce a compact experiment that tests the existing configuration, disables the wall that stopped that attack, reruns it, and restores the learner's original configuration. Show explanatory outcomes, not decorative rewards. **Limit:** physics-simulation findings do not establish security-learning effectiveness; validate with this audience.
+These are source/heuristic findings, not measured user failure rates.
 
-### Security practice: OWASP WebGoat
+## 3. Related products and research
 
-[WebGoat](https://owasp.org/www-project-webgoat/) pairs vulnerability explanation and practice with mitigation (“Learn the hack – Stop the attack”) and emphasizes authorized, safe learning.
+### Predict–Observe–Explain (POE)
 
-**Transfer:** link every attack outcome to the responsible wall and keep replay, trace, and mitigation actions nearby. State the model's limits prominently. **Important difference:** WebGoat is an intentionally vulnerable application; Hermes is a local simulation. Do not imply that Hermes opens a vulnerable server, deploys infrastructure, or certifies a real system's security.
+[Simulic's POE guide](https://simulic.com/en/guides/predict-observe-explain-with-simulations/) (October 2026) summarizes the method: "Students commit to a prediction, watch what really happens, and then explain the difference," and in their implementation "the simulation stays locked until the student commits." The [ANU POE activity guide](https://learningandteaching.anu.edu.au/resources/predict-observe-explain-activity/) asks learners to revisit their prediction against the actual result. These are practitioner teaching guides, not independent experimental evidence of efficacy for this app.
 
-### Structured practice: PortSwigger Web Security Academy
+**Transfer:** after the experiment's baseline run, replace the "remove the wall" button with two prediction choices — **Still stopped** / **Gets through**. Choosing one removes the wall and reruns the same attack, then shows whether the prediction matched, with the causal explanation. **Limit:** a two-choice prediction is a light version of POE; the "explain" step is supplied by the trace rather than written by the learner.
 
-[Learning paths](https://portswigger.net/web-security/learning-paths) provide curated, structured, self-paced study. The fetched page describes that approach; detailed pathway content is dynamically rendered and was not independently audited here.
+### Explorable explanations
 
-**Transfer:** an optional first experiment can supply a starting point without removing open exploration. Do not invent completion certificates, mastery percentages, or learning progress based only on clicks.
+Bret Victor's [Explorable Explanations](http://worrydream.com/ExplorableExplanations/) (2011): "The reader is not forced to interact," and sandbox-style dumps "are not explanations." He argues for multiple linked representations.
 
-### Progressive disclosure
+**Transfer:** the experiment stays optional; free exploration is never locked. The map, the trace, the result card, and the new map-as-text list are linked representations of the same model state.
 
-[Nielsen Norman Group, Progressive Disclosure](https://www.nngroup.com/articles/progressive-disclosure/) (Jakob Nielsen, 2006) recommends keeping important, frequent options visible and deferring less-used complexity behind clear labels. It distinguishes disclosure from staged workflows and cautions against splitting interdependent choices into rigid steps.
+### Simulation design: PhET
 
-**Transfer:** preserve the three-pane desktop workbench. On mobile, use Map, Walls, Attacks, and Tools; Tools exposes Friends, Telegram, Self-test, Trace, and Log. Do not bury the attack/defense loop in a wizard. The extra tap for secondary tools is an explicit tradeoff for legibility and adequate touch targets.
+[PhET's research overview](https://phet.colorado.edu/en/research) describes four to six think-aloud interviews per simulation, minimal on-screen text, implicit scaffolding, and a caution that simulations should be fun "but not that fun" — engagement must serve the concept.
 
-## 3. Standards that constrain the design
+**Transfer:** no celebratory effects; feedback is explanatory. Keep instructional text short. **Limit:** physics-simulation findings do not establish security-learning effectiveness.
+
+### Security practice: OWASP Juice Shop, WebGoat, LLM Top 10
+
+The [Juice Shop companion guide](https://pwning.owasp-juice.shop/companion-guide/latest/part1/challenges.html) uses difficulty and category filters, progress tracking, and hints; notifications persist until dismissed. [WebGoat](https://owasp.org/www-project-webgoat/) pairs each hack with its mitigation. The [OWASP GenAI LLM01:2025 prompt-injection entry](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) states that it is "unclear if there are fool-proof methods of prevention" and recommends least privilege, human approval, and segregating external content.
+
+**Transfer:** filter attacks by outcome (All / Breached / Contained / Blocked) with counts. Keep "a local model, not a certification" wording prominent — the OWASP statement supports not presenting 15/15 as "safe". **Difference:** Hermes does not award progress or difficulty points; clicks are not mastery.
+
+### Coverage visualization: MITRE ATT&CK Navigator
+
+[ATT&CK Navigator](https://github.com/mitre-attack/attack-navigator) overlays coverage layers on a technique matrix and runs entirely client-side.
+
+**Transfer:** the outcome filter is a lightweight "coverage layer" over the attack catalog. The client-only design matches this app's offline constraint.
+
+### Network simulation: Cisco Packet Tracer
+
+[Packet Tracer](https://en.wikipedia.org/wiki/Packet_Tracer) teaches abstract networking with animated packets over a topology, positioned as a learning aid rather than real equipment.
+
+**Transfer:** retain the packet animation and manual stepping; keep the "simulation only" framing.
+
+## 4. Interaction and accessibility guidance
 
 | Source | Verified guidance | Application |
 | --- | --- | --- |
-| [WAI-ARIA tabs pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/) | Tab/tabpanel associations, selected state, roving tab stop, arrows, Home/End; automatic activation is appropriate when panels appear immediately. | Proper desktop tabs, direction-aware arrows, labeled panels, focusable panel content. Mobile destination navigation is navigation, not an invalid shared-panel tablist. |
-| [WCAG 2.2 target size minimum](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html) | AA minimum is 24×24 CSS pixels, with specified exceptions. 44×44 is the enhanced criterion, not the AA requirement. | Aim for 44-pixel primary controls and comfortable row targets. Check compact controls rather than claiming universal compliance. |
-| [WCAG use of color](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html) | Color cannot be the only way to communicate information. | Keep visible blocked/contained/breached text, counts, checks, switch state, and explanatory traces alongside semantic colors. |
-| [W3C HTML direction guidance](https://www.w3.org/International/questions/qa-html-dir) | Set base direction with HTML `dir`; isolate mixed-direction text and use `dir="auto"` where appropriate. | Retain pre-paint language selection, logical layout, Persian typography, LTR code, isolated identifiers, and direction-aware keyboard behavior. |
-| [web.dev PWA offline data](https://web.dev/learn/pwa/offline-data) | Cache Storage stores URL-addressable resources; localStorage is synchronous and suited to small values, not bulk data. | Keep the dependency-free cached shell and small saved preferences. Do not add a database or network service to solve a visual-design problem. |
-
-The Apple-style local design skill supplies visual conventions (neutral surfaces, blue actions, restrained typography and spacing). These are aesthetic/product constraints, not empirical evidence that an Apple-like interface teaches security better. Apple's JavaScript-rendered HIG layout page did not expose substantive content through the retrieval tool and is not used as a research finding.
-
-## 4. Audit of the existing app
-
-### Strengths to preserve
-
-- Fifteen attacks and six defense layers already support cause-and-effect learning.
-- Architecture inspection, blast radius, attack traces, chat identities, self-tests, and friend provisioning offer useful complementary representations.
-- Automatic/manual playback, local preferences, self-hosted fonts, classic scripts, bilingual catalogs, and offline caching are strong foundations.
-- Outcome labels already accompany semantic colors. No external runtime dependencies are necessary.
-
-### Friction to address
-
-1. **No clear starting action.** A first-time learner faces a dense map, many switches, and an attack catalog without an experiment to try.
-2. **Crowded phone navigation.** Seven destinations compete for space; the activity log is not reachable from the mobile bar. Header controls compete with the scenario picker.
-3. **Weak hierarchy.** Many small labels, tightly packed controls, teal/blue accents, dotted backgrounds, gradients, shadows, and celebratory effects compete with the learning task.
-4. **Misleading confidence risk.** “15/15 attacks stopped” can be mistaken for a real security rating; self-test language can sound like actual command execution.
-5. **Incomplete interaction semantics.** Desktop tabs lack a full roving keyboard pattern and explicit relationships. Mobile buttons use tab selection without valid panel relationships. Hidden mobile panels need consistent inert handling after navigation and resizing.
-6. **Form feedback is primarily visual.** Errors need input-level invalid state and programmatic links to their help text.
-
-These are source/heuristic findings, not measured user failure rates.
+| [Nielsen, 10 usability heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/) | Users need a "clearly marked 'emergency exit'"; "Support Undo and Redo"; help in context; minimalist design. | Undo toast after direct wall/scenario changes; **Turn all walls on** in the Walls header; contextual experiment card rather than a tour. |
+| [NN/g, Onboarding tutorials vs. contextual help](https://www.nngroup.com/articles/onboarding-tutorials/) (2023) | "Tutorials interrupt users, don't necessarily improve task performance, and are quickly forgotten"; "Make it easy to dismiss (and recall) the help content." | No forced tour. The experiment is a collapsible card that can be reopened. |
+| [NN/g, Visibility of system status](https://www.nngroup.com/articles/visibility-system-status/) (2018) | Immediate feedback; "Communicating the current state allows users to feel in control." | Undo toast reports the modeled score change ("2 more attacks now get through"); filter counts are always visible. |
+| [NN/g, Microinteractions](https://www.nngroup.com/articles/microinteractions/) (2018) | Feedback near the trigger; offer undo. | Switch state changes in place; the toast adds the undo option. |
+| [NN/g, Indicators, validations, notifications](https://www.nngroup.com/articles/indicators-validations-notifications/) (2024) | Indicators belong near the element; toasts are poor for errors and can be missed. | Toasts are only for reversible, non-critical feedback with a longer timeout when they carry an action. Form errors stay inline. |
+| [NN/g, Empty states](https://www.nngroup.com/articles/empty-state-interface-design/) (2021) | "Do not default to totally empty states"; "Provide direct pathways." | An empty filter explains why ("No attacks get through") and offers **Show all attacks**. |
+| [NN/g, Data tables](https://www.nngroup.com/articles/data-tables/) (2022) | Support find/compare/view/act; clearly indicate active filters. | Filter buttons use `aria-pressed` and a filled state; a status line reports how many are shown. |
+| [NN/g, Tabs used right](https://www.nngroup.com/articles/tabs-used-right/) (2024) | Use "at least two selection indicators"; avoid thin 1px strokes; short labels; no ALL CAPS. | Selected tab: bold accent text, 3px underline, and a tinted background. All-caps labels removed throughout. |
+| [NN/g, Toggle-switch guidelines](https://www.nngroup.com/articles/toggle-switch-guidelines/) (2018) | Immediate effect; high-contrast state; label describes the on state. | Wall switches apply immediately and are labeled with the defense they enable. |
+| [NN/g, Progressive disclosure](https://www.nngroup.com/articles/progressive-disclosure/) (2006) | At most two levels; don't stage interdependent steps. | Unchanged from round one: three-pane workbench; phone Tools one level away. |
+| [NN/g, Mobile navigation patterns](https://www.nngroup.com/articles/mobile-navigation-patterns/) (2015) | More than five items is hard to fit; labeled icons; hidden menus are least discoverable. | Keep four labeled phone destinations. |
+| [NN/g, Bottom sheets](https://www.nngroup.com/articles/bottom-sheet/) and [modal vs. nonmodal dialogs](https://www.nngroup.com/articles/modal-nonmodal-dialog/) | Visible Close, Back dismisses, short tasks only, no stacking; errors inline. | The add-friend sheet keeps its close button, Escape handling, and inline validation. |
+| [W3C WAI, Complex images](https://www.w3.org/WAI/tutorials/images/complex/) (updated April 2026) | Diagrams need a short description plus a long description; "Make long descriptions available to everyone." | A visible **Map as text** disclosure under the map lists each node and zone with its walls on/off; the SVG references it via `aria-describedby`. |
+| [APG switch pattern](https://www.w3.org/WAI/ARIA/apg/patterns/switch/) | Constant label; Space toggles; group related switches; `aria-describedby` for help. | Wall checkboxes have `role="switch"` and reference their description; each layer is a labeled group. |
+| [APG modal dialog](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/) | Inert background, Escape, focus return, visible close, `aria-labelledby`. | Preserved for the add-friend dialog. |
+| [WCAG 2.2 — 1.4.11 Non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html) | 3:1 for state indicators and UI components. | Switch "off" track and zone/edge lines darkened (`#86868b` light, `#7c7c80` dark). Numeric checks cover the principal adjacent surfaces, not every diagram state. |
+| [WCAG 2.2 — 1.4.3 Contrast (minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) | 4.5:1 for text, 3:1 for large text. | Text colors unchanged from the neutral palette. |
+| [WCAG 2.2 — 2.4.11 Focus not obscured](https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html) | Sticky footers can hide focus; scroll padding is a fix. | `scroll-padding-bottom` reserves the phone navigation height plus safe area. |
+| [WCAG 2.2 — 4.1.3 Status messages](https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html) | Use `role="status"`; avoid assertive announcements for non-urgent updates. | Filter status, experiment text, and toasts are polite. |
+| [WCAG 2.2 — 1.4.10 Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html) | 320px without two-dimensional scrolling; diagrams are exempt only for that section. | Only the map scrolls in two dimensions; everything else reflows. |
+| [WCAG 2.2 — 2.3.3 Animation from interactions](https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html) and [web.dev, prefers-reduced-motion](https://web.dev/articles/prefers-reduced-motion) | Motion triggered by interaction should be disableable; JavaScript should listen for preference changes. | A `change` listener updates the reduced-motion flag live. |
+| [Android window size classes](https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes) | Compact < 600, medium 600–839, expanded ≥ 840; no two-pane in compact height. | Unchanged: the three-pane workbench needs more than the 840px "expanded" minimum, so it switches to single-pane navigation at 1080px and below. |
+| [W3C Arabic & Persian layout requirements (ALReq)](https://www.w3.org/TR/alreq/) | Base direction, bidi isolation of neutrals, ZWNJ in Persian, legible small-screen sizes. | Persian catalog already uses ZWNJ; identifiers remain isolated LTR. No change needed. |
 
 ## 5. Implementation decisions
 
 | Priority | Change | Files | Acceptance |
 | --- | --- | --- | --- |
-| P0 | Add a visible local-simulation disclaimer and explicit modeled score wording | `index.html`, catalogs | No implication of real execution or certification in the main learning workflow. |
-| P0 | Optional compare experiment with reversible configuration changes | `js/app.js`, markup, catalogs | Test current setup, disable the stopping wall and rerun, restore original setup; retain free attack selection. |
-| P0 | Four-destination mobile navigation and complete Tools access | markup, JS, CSS, catalogs | Every existing tool, including Log, reachable in English and Persian without a squeezed seven-item bar. |
-| P0 | Correct tabs, keyboard focus, hidden panels, and form errors | markup, JS | Tab associations, roving focus, RTL arrows, hidden content inert, invalid/help associations. |
-| P1 | Neutral visual system across the shell, map, attacks, inspector, chat, friends, and dialog | `css/app.css` | Consistent blue actions, no decorative gradients/shadows, readable labels, generous controls, semantic outcome colors preserved. |
-| P1 | Preserve file/offline behavior and update cache release | `sw.js`, manifest, README | Relative local assets, bumped cache name, no new third-party requests, existing shortcuts documented. |
+| P0 | Prediction step in the experiment | `js/app.js`, `index.html`, catalogs, CSS | After the baseline, two prediction buttons replace the "remove" action; choosing one removes the wall, reruns, and reports matched/surprise. **Restore my setup** still returns the exact snapshot. |
+| P0 | Undo for every configuration change | `js/app.js`, catalogs | Wall switches, layer "all", inspector toggles, result actions, and scenario changes show an Undo toast with the score change; Undo restores the previous configuration and logs it. |
+| P0 | Emergency exit | `index.html`, `js/app.js`, catalogs | **Turn all walls on** in the Walls header restores the full design (undoable); disabled when every wall is already on. |
+| P0 | Map as text | `index.html`, `js/app.js`, catalogs, CSS | Visible disclosure listing host, each friend's proxy/Hermes box/sandbox/bridge with walls on/off, and external services; updated on every change; referenced by the SVG. |
+| P1 | Attack outcome filter and empty state | `index.html`, `js/app.js`, catalogs, CSS | All/Breached/Contained/Blocked with counts and `aria-pressed`; polite status; empty state with **Show all attacks**. |
+| P1 | Switch semantics, tab indicators, sentence case, contrast | `js/app.js`, CSS | `role="switch"` with descriptions; labeled layer groups; two tab selection indicators; no all-caps labels; ≥3:1 state indicators. |
+| P1 | Live reduced-motion, focus not obscured | `js/app.js`, CSS | Preference changes apply without reload; focused controls stay above the phone navigation. |
+| P1 | Matching panel collapse/reopen handles (user-requested follow-up) | `index.html`, `css/app.css`, `js/app.js`, browser checks | Both desktop panels retain an operable edge handle in each state; open handles are arrow-only, closed handles show the panel name; localized action/expansion state and RTL positioning stay synchronized. |
+| P1 | Release | `sw.js`, README | Cache name bumped; no new assets or third-party requests; README documents the new workflow. |
 
-### Visual system
+### Content rules
 
-- Light: white surfaces, `#f5f5f7` canvas, `#1d1d1f` text; dark: neutral charcoal surfaces rather than saturated navy.
-- Action blue `#0066cc`; dark links `#2997ff`; focus blue `#0071e3`. Green, amber, and red communicate security outcomes, not additional brand accents. Friend colors identify simulated people.
-- Local Inter/system typography; local Vazirmatn for Arabic script. Body text 17px, utility text generally 14px. Map labels retain scale-appropriate SVG typography.
-- Spacing built around 8, 12, 17, 24, and 32px. Utility corners 8px, cards 18px, pill-shaped main actions. Borders and spacing replace decorative shadows.
-- Avoid a marketing hero: viewport space belongs to the model, controls, and explanations. Map remains inspectable and scrollable when vertical space is constrained.
+- Prediction wording is neutral ("Still stopped" / "Gets through"); a wrong prediction says "Not what you predicted. Check the trace to see why," not that the learner failed.
+- Undo toasts state what changed and the effect on the modeled score, for example "Off: Firewall: only SSH in · 1 more attack now gets through".
+- The score remains "modeled attacks stopped", never "secure".
+- No points, streaks, or completion percentages.
 
-### Content and interaction
+### Follow-up: desktop panel handles
 
-- Explain the score as **modeled attacks stopped**, not safety or mastery.
-- Label the optional experiment; never silently reset the learner's setup at entry.
-- Snapshot the current configuration before the experiment changes it; make restoration explicit and available until restored. Do not persist an experiment-in-progress across reloads.
-- Reuse the existing simulator and attack pipeline; do not implement a second, contradictory security model.
-- Keep automatic playback and manual stepping; respect reduced motion and preserve saved preference.
-- Use polite status feedback, not forced focus jumps for every animation step.
-- Preserve all six desktop tabs, all scenarios, friend isolation, chat identities, self-tests, trace, log, install, and language/theme controls.
+The user requested matching collapse/reopen controls for both side panes, then clarified that the panel name should not appear when closing an open pane. This is a direct product preference, not a new research finding or evidence that icon-only controls are universally better.
 
-## 6. Verification plan
+The [APG Disclosure (Show/Hide) pattern](https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/) was retrieved during the documentation follow-up on 10 November 2026. It supports button activation with Enter/Space, `aria-expanded` reflecting visibility, and an optional `aria-controls` reference. It does not prescribe the arrow-only/named state treatment or the lateral arrows used here; those remain local design choices. This source check does not establish that keyboard interaction was tested in the browser.
 
-Check Chromium at 320, 390, 768, 1280, and 1440px, English/LTR and Persian/RTL, light/dark, and reduced motion. Check document/header overflow, primary targets, mobile destination/tool access, tab keyboard navigation, restored configuration, form errors, all fifteen modeled attacks, manual playback/stop, friend addition, and language switching. Exercise cached reload with network disabled and direct `file://` startup. Use local browser automation without adding runtime dependencies; record actual results separately rather than treating this plan as evidence of a pass.
+- Above 1080 CSS pixels, each expanded pane has an arrow-only handle at its inner boundary. When collapsed, the handle remains at the workbench's outer edge with the panel name. Both states retain a localized accessible label describing the next action; arrows mirror appropriately in RTL. Existing header toggles, shortcuts, and saved panel visibility remain available.
+- Handles live inside the positioned `#main` workbench but outside the panes made inert. This keeps reopening possible without depending on hidden content. `setPanel` and `syncPanelButtons` share state/label updates across edge controls, header controls, shortcuts, and language refresh.
+- Handle offsets reuse pane-width variables. An initial logical-inset implementation failed the RTL pointer hit test because the handle uses vertical writing mode; physical horizontal offsets with explicit RTL counterparts corrected that geometry. This is a documented axis-specific exception, not a reason to abandon logical CSS elsewhere.
+- The open handle has a 44×44 CSS-pixel design target. At 1080px and below, desktop handles remain hidden and the existing mobile navigation is unchanged. The deployed UI changes advanced the cache to `walls-lab-v16`; the subsequent documentation/skill updates do not change the runtime shell.
 
-Manual follow-up: keyboard-only task completion, real touch devices, browser zoom/text enlargement, forced colors, VoiceOver/NVDA with Persian content, and a small think-aloud study. Suggested tasks: predict an outcome, weaken one defense, explain the changed result, restore it, inspect a friend's isolation, and find the log on a phone. Observe time to first meaningful attack, correct causal explanation, recovery success, and discoverability. Do not collect analytics or send learner data without an explicit privacy decision.
+## 6. Verification record
 
-## 7. Limits and deferred work
-
-- No claim of complete WCAG conformance follows from source inspection or automated browser checks.
-- No real deployment, container execution, or adversarial test occurs. Simulation coverage is deliberately bounded.
-- No new backend, framework, tracking, CDN, dependency manager, or mandatory account is justified.
-- Full diagram accessibility remains a specialized challenge: retain keyboard inspection and textual traces, and validate the reading order with assistive-technology users.
-- Long-term preference persistence depends on browser storage; offline availability depends on successful initial caching. Neither is a backup guarantee.
-
-## 8. Implementation verification record
-
-Executed on 10 November 2026 using headless Chromium and Node's built-in CDP/WebSocket client (`tools/check-ui.mjs`), with reduced motion enabled. The static site was served over localhost; direct-file startup was checked separately. No dependency or build step was added to the app.
+Executed on 10 November 2026 with headless Chromium and Node's built-in CDP/WebSocket client (`tools/check-ui.mjs`), reduced motion enabled, served over `localhost`, plus a direct `file://` startup check. No dependency or build step was added to the app.
 
 | Check | Observed result |
 | --- | --- |
-| English/Persian × 320/390/768/1280/1440px × light/dark | All 20 combinations passed document, header, and selected attack/wall panel overflow assertions. Primary phone navigation targets were at least 44px high. |
-| Guided experiment | Baseline preserved the configuration; comparison removed a defense; restoration returned the exact snapshot. The already-unprotected setup showed the alternative explanation. |
-| Existing security model | All 15 hardened outcomes remained stopped. Every attack completed through the actual automatic playback UI with a populated trace. All six selectable scenarios produced valid modeled outcomes. |
-| Keyboard and accessibility plumbing | LTR/RTL arrows, Home/End, one desktop tab stop, tab/panel associations, hidden-panel inert state, inspector entry/Escape focus return, and input invalid/help links passed. |
-| Mobile navigation | All five secondary tools, including Log, were reachable at narrow widths. Manual playback controls were in view at 320×700 in Persian. |
-| Preserved lab tools | Three chat identities, self-test completion, invalid form feedback, and successful friend provisioning passed. |
-| Playback | Manual pause, next step, and stop passed. |
-| Offline and disk | Cached offline navigation/reload and manual playback passed; direct `file://` startup exposed all 15 attacks. |
-| Catalogs and syntax | English/Persian key parity (527 keys each), classic-script syntax, and manifest JSON passed. No browser runtime exceptions were observed in the UI suite. |
-| Visual review | Wide workbench and phone dialog screenshots reviewed and refreshed for the install manifest. Screenshot review led to fixing internal horizontal overflow and moving the simulation notice above the experiment. |
+| English/Persian × 320/390/768/1280/1440px × light/dark | No document, header, or panel overflow in all 20 combinations; phone navigation targets at least 44px high. |
+| Desktop panel handles | At 1440px in English and Persian, both handles passed open → closed → open using CDP mouse input. Assertions covered expansion/inert state, hidden name only while expanded, localized next-action labels, width ≥44px, and center-point `elementFromPoint` reachability. The failing RTL positioning attempt was corrected before the full rerun passed. |
+| Prediction experiment | Baseline kept the configuration; choosing **Gets through** removed the wall and reran; **Restore my setup** returned the exact snapshot; the unprotected scenario showed the alternative explanation. |
+| Undo and reset | Turning a wall off showed an Undo toast; Undo restored the configuration; **Turn all walls on** restored the full design and was disabled afterward. |
+| Attack filter | Filtering hardened setup to "breached" showed the empty state; **Show all attacks** returned all 15. |
+| Map as text | List present and updated after configuration changes; SVG references the description. |
+| Switch semantics | Wall inputs expose `role="switch"` and a description reference. |
+| Existing security model | All 15 hardened outcomes stopped; every attack completed through automatic playback with a trace; all six scenarios produced valid outcomes. |
+| Keyboard plumbing | LTR/RTL arrows, Home/End, single tab stop, tab/panel association, hidden-panel inert, inspector Escape focus return, input invalid/help links. |
+| Preserved tools | Chat identities, self-test, form validation, friend provisioning, manual playback (pause/next/stop), mobile tool access including Log. |
+| Offline and disk | Cached offline reload and playback passed; `file://` startup exposed all 15 attacks. |
+| Catalogs and syntax | English/Persian key parity (546 keys each); classic-script syntax; manifest JSON. |
+| Visual review | Wide English experiment card with prediction buttons and phone Persian filter/empty state reviewed; a redundant "showing 0" status was removed as a result. |
 
-These are bounded automated/screenshot checks, not a claim of comprehensive accessibility, perceptual contrast auditing, cross-browser conformance, or demonstrated learning gains. Real devices, non-reduced-motion usability, assistive technology, zoom/forced-colors behavior, and think-aloud studies still need the manual validation described above.
+These are bounded automated and screenshot checks, not a claim of WCAG conformance, perceptual contrast auditing, cross-browser coverage, or demonstrated learning gains.
+
+## 7. Manual follow-up and limits
+
+- Run a small think-aloud study (four to six learners, as PhET does). Tasks: predict an outcome, weaken a defense, explain the change, undo a mistaken toggle, reset, filter to breached attacks, find the log on a phone. Observe prediction accuracy over time, causal explanations, recovery, and discoverability. Collect no analytics without an explicit privacy decision.
+- Test with VoiceOver/NVDA in both languages, especially the map-as-text reading order and toast announcements; test zoom, forced colors, and real touch devices.
+- Manually review panel Enter/Space activation and focus (including collapsing while focus is inside a pane), header/shortcut synchronization, reload of saved visibility, language changes while collapsed, both panes closed, and transitions across 1080px. The handle cycle uses reduced motion at 1440px; it does not verify animated travel, every desktop width/theme combination, full target bounds/height, or real touch operation.
+- Undo is a transient, one-level toast action (nine seconds), not durable history; a later notification can replace it. The experiment has a separate **Restore my setup** recovery path. Neither recovery snapshot survives reloads beyond the normal saved configuration.
+- No real deployment, command execution, or adversarial test occurs; the model is deliberately bounded and is not a security rating.
+- No new backend, framework, tracking, CDN, or dependency manager is justified by these findings.

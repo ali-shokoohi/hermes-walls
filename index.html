@@ -54,7 +54,7 @@
 
   <main class="main" id="main">
     <aside class="pane walls" id="vWalls">
-      <div class="pane-h"><h2 data-i18n="wallsH"></h2><p data-i18n="wallsP"></p></div>
+      <div class="pane-h"><h2 data-i18n="wallsH"></h2><p data-i18n="wallsP"></p><button class="chipbtn" type="button" id="wallsReset" data-i18n="wallsReset"></button></div>
       <div id="wallList"></div>
     </aside>
 
@@ -75,6 +75,11 @@
           <summary data-i18n="learnHeading"></summary>
           <div class="learn-body">
             <p id="learnText" role="status" aria-live="polite" data-i18n="learnIntro"></p>
+            <div class="learn-predict" id="learnPredict" role="group" aria-labelledby="learnPredictLabel" hidden>
+              <span id="learnPredictLabel" data-i18n="predictLabel"></span>
+              <button class="chipbtn" type="button" id="predStop" data-i18n="predictStop"></button>
+              <button class="chipbtn" type="button" id="predThrough" data-i18n="predictThrough"></button>
+            </div>
             <div class="learn-actions"><button class="chipbtn primary" type="button" id="learnRun" data-i18n="learnStart"></button><button class="chipbtn" type="button" id="learnRestore" hidden data-i18n="learnRestore"></button></div>
           </div>
         </details>
@@ -94,6 +99,11 @@
           <button class="rx" type="button" id="resX">×</button>
         </div>
         <div id="mapHost"></div>
+        <details class="map-text" id="mapText">
+          <summary data-i18n="mapTextH"></summary>
+          <p id="mapTextHint" data-i18n="mapTextP"></p>
+          <ul id="mapTextList"></ul>
+        </details>
       </div>
       <div class="insp" id="insp" role="dialog"></div>
     </section>
@@ -113,12 +123,15 @@
       </div>
 
       <div class="tabp on" id="tp-attacks" role="tabpanel">
-        <div class="atk-sum">
-          <div class="s1"><b id="nB">0</b><span data-i18n="sumB"></span></div>
-          <div class="s2"><b id="nC">0</b><span data-i18n="sumC"></span></div>
-          <div class="s3"><b id="nX">0</b><span data-i18n="sumX"></span></div>
+        <div class="atk-sum" role="group" id="atkFilter">
+          <button type="button" class="s0" data-filter="all" aria-pressed="true"><b id="nA">0</b><span data-i18n="filterAll"></span></button>
+          <button type="button" class="s3" data-filter="breached" aria-pressed="false"><b id="nX">0</b><span data-i18n="sumX"></span></button>
+          <button type="button" class="s2" data-filter="contained" aria-pressed="false"><b id="nC">0</b><span data-i18n="sumC"></span></button>
+          <button type="button" class="s1" data-filter="blocked" aria-pressed="false"><b id="nB">0</b><span data-i18n="sumB"></span></button>
         </div>
+        <p class="atk-status" id="atkStatus" role="status" aria-live="polite"></p>
         <div id="atkList"></div>
+        <div class="atk-empty" id="atkEmpty" hidden><p id="atkEmptyText"></p><button class="chipbtn" type="button" id="atkShowAll" data-i18n="filterShowAll"></button></div>
       </div>
 
       <div class="tabp" id="tp-friends" role="tabpanel">
@@ -169,10 +182,9 @@
         <ul class="log" id="log"><li class="empty" style="display:block" data-i18n="logEmpty"></li></ul>
       </div>
     </aside>
+    <button class="edge-tab l" type="button" id="edgeL" aria-controls="vWalls" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span data-i18n="edgeL"></span></button>
+    <button class="edge-tab r" type="button" id="edgeR" aria-controls="vSide" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span data-i18n="edgeR"></span></button>
   </main>
-
-  <button class="edge-tab l" type="button" id="edgeL"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span data-i18n="edgeL"></span></button>
-  <button class="edge-tab r" type="button" id="edgeR"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span data-i18n="edgeR"></span></button>
 
   <nav class="mtabs" id="mtabs">
     <button type="button" data-view="map" aria-selected="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="8.5" y="14" width="7" height="7" rx="1.5"/><path d="M6.5 10v2h11v-2M12 12v2"/></svg><span data-i18n="mMap"></span></button>
