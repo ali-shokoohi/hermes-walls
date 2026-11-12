@@ -88,6 +88,9 @@ select.preset {
 .ibtn { width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); display: inline-grid; place-items: center; flex: none; }
 .ibtn:hover { background: var(--panel-2); }
 .ibtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.header-status { display: flex; align-items: center; gap: 8px; flex: none; }
+.github-link { color: var(--ink); text-decoration: none; }
+.github-link svg { fill: currentColor; stroke: none; }
 
 .main {
   position: relative;
@@ -885,7 +888,7 @@ svg.map .node.bye > .ni { animation: nodeBye .45s ease-in forwards; }
   .langbtn { grid-column: 2; grid-row: 1; }
   #themeBtn { grid-column: 3; grid-row: 1; }
   #installBtn { grid-column: 4; grid-row: 1; }
-  .top .score { grid-row: 2; grid-column: 1; justify-self: start; }
+  .header-status { grid-row: 2; grid-column: 1; justify-self: start; }
   .top .score small { display: none; }
   .sel-wrap { grid-row: 2; grid-column: 2 / -1; justify-self: end; }
   .sel-wrap label { display: block; font-size: 14px; }

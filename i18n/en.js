@@ -6,6 +6,7 @@ window.HWL_I18N.strings.en = {
   "labNavigation": "Lab navigation",
   "toolNavigation": "More lab tools",
   "languageLabel": "Language",
+  "githubSource": "View source on GitHub (opens in a new tab)",
   "learnHeading": "Try a cause-and-effect experiment",
   "learnIntro": "Predict, observe, explain: test your setup, predict what happens without the wall that stops an attack, then compare. Your original setup can be restored.",
   "learnStart": "Test my setup",

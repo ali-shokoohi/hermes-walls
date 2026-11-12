@@ -2,6 +2,12 @@
 
 Research date: 10 November 2026 (second round). Scope: the complete English/Persian, offline-first security-learning PWA, not a promotional landing page.
 
+### GitHub source link — 12 November 2026
+
+Added a native, keyboard-focusable GitHub link beside the header score. The inline SVG needs no network asset; English/Persian tooltips and accessible names announce the new tab, and `noopener noreferrer` isolates it. The score/link group stays together on the second header row at phone/tablet widths. Service-worker cache advanced to `walls-lab-v21`.
+
+Executed `tools/check-i18n.mjs` and `tools/check-ui.mjs`: both passed. Browser checks verify the repository URL, safe new-tab attributes, programmatic focus, and the link's localized name, tooltip, 44px target, and pointer reachability across 320/390/768/1280/1440px in both languages and themes. Existing offline checks also passed. These checks do not establish screen-reader conformance or verify external GitHub availability while offline.
+
 ## 1. Recommendation
 
 Keep the learning loop from round one (**change a defense → run an attack → explain the outcome → compare**), but make the learner **commit to a prediction before the comparison runs**, make direct wall and scenario changes **undoable**, and give the architecture diagram a **text alternative available to everyone**. Make the attack list filterable by outcome so the important result (which modeled attacks breach the setup) is one tap away. Remove remaining visual noise: all-caps labels, weak tab selection cues, and low-contrast state indicators.

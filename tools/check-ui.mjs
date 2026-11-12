@@ -45,6 +45,7 @@ try {
   await cdp("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
   await viewport(1440);
   await navigate(origin + "/?lang=en");
+  assert.deepEqual(await run("(() => { const a=document.getElementById('githubLink'); a.focus(); return { href:a.href, target:a.target, safe:a.relList.contains('noopener') && a.relList.contains('noreferrer'), focus:document.activeElement===a }; })()"), { href:"https://github.com/ali-shokoohi/hermes-walls", target:"_blank", safe:true, focus:true });
   await run("localStorage.clear()");
   await navigate(origin + "/?lang=en");
   // Exercise the native selector rather than only the exposed setLang helper.
@@ -171,12 +172,14 @@ try {
             tabs: Array.from(document.querySelectorAll('.tab')).every(t => document.getElementById(t.getAttribute('aria-controls'))),
             primary: Array.from(document.querySelectorAll('#mtabs button')).every(b => b.getBoundingClientRect().height >= 44),
             panes: ['vWalls','tp-attacks'].every(id => { const p = document.getElementById(id); return !p.clientWidth || p.scrollWidth <= p.clientWidth + 1; }),
+            github: (() => { const a=document.getElementById('githubLink'), r=a.getBoundingClientRect(); return r.width>=44 && r.height>=44 && r.left>=0 && r.right<=innerWidth && a.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)) && a.getAttribute('aria-label')===HWL_I18N.strings[document.documentElement.lang].githubSource && a.title===a.getAttribute('aria-label'); })(),
             language: (() => { const s=document.getElementById('langSelect'), r=s.getBoundingClientRect(); return r.height>=44 && r.width>=44 && r.left>=0 && r.right<=innerWidth && document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===s && s.value===document.documentElement.lang; })() };
         })()`);
         assert.ok(metrics.page <= width + 1, `${lang}/${width}/${theme} document overflow: ${JSON.stringify(metrics)}`);
         assert.ok(metrics.header <= metrics.headerWidth + 1, `${lang}/${width}/${theme} header overflow: ${JSON.stringify(metrics)}`);
         assert.equal(metrics.tabs, true);
         assert.equal(metrics.language, true, `${lang}/${width}/${theme} language target/value`);
+        assert.equal(metrics.github, true, `${lang}/${width}/${theme} GitHub target and localized label`);
         assert.equal(metrics.panes, true, `${lang}/${width}/${theme} pane overflow`);
         if (width <= 1080) {
           assert.equal(metrics.primary, true);

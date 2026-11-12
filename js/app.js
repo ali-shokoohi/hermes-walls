@@ -1487,6 +1487,7 @@ function applyStatic() {
   D.querySelectorAll("#preset option").forEach(function (o) { o.textContent = S(o.getAttribute("data-i18n")); });
   syncLanguageSelect();
   $("themeBtn").setAttribute("aria-label", S("themeAria")); $("themeBtn").title = S("themeAria");
+  $("githubLink").setAttribute("aria-label", S("githubSource")); $("githubLink").title = S("githubSource");
   $("score").title = S("scoreTitle");
   $("resX").setAttribute("aria-label", S("dismiss"));
   $("sendBtn").setAttribute("aria-label", S("sendAria"));
