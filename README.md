@@ -16,6 +16,7 @@ This folder is a plain static site. No build step, no dependencies, and no exter
 | `fonts/` | Self-hosted font files (WOFF / WOFF2). |
 | `manifest.webmanifest` | Install metadata, the "Add a friend" shortcut, and store screenshots. |
 | `sw.js` | Service worker that handles offline caching. |
+| `CNAME` | GitHub Pages custom domain (`hermes-walls.shokoohi.dev`). |
 | `icons/` | App, maskable, Apple touch, and shortcut icons. |
 | `screenshots/` | `wide.png` (1440×900) and `narrow.png` (780×1688) for the install dialog; `social-preview.png` (1280×640) for shared links. |
 | `UI-UX-RESEARCH.md` | Related-product research, primary sources, design decisions, and validation plan. |
@@ -28,7 +29,9 @@ This folder is a plain static site. No build step, no dependencies, and no exter
 ## Deploy
 
 1. Bump `VERSION` in `sw.js` (for example `walls-lab-v2` to `walls-lab-v3`).
-2. Upload the whole folder as-is to any static HTTPS host (for example `walls.shokoohi.dev`).
+2. Upload the whole folder as-is to any static HTTPS host. Production uses GitHub Pages at [hermes-walls.shokoohi.dev](https://hermes-walls.shokoohi.dev/).
+
+For GitHub Pages, publish `main` from the repository root, keep `CNAME` set to `hermes-walls.shokoohi.dev`, and set the same custom domain in **Settings → Pages** with **Enforce HTTPS** enabled. DNS for `hermes-walls.shokoohi.dev` should be a CNAME pointing to `ali-shokoohi.github.io` (not a URL or repository path). GitHub Pages redirects the original `ali-shokoohi.github.io/hermes-walls/` address to the custom domain.
 
 Bumping `VERSION` matters: it names the cache, so old caches get cleared on activation. Open tabs show a "Reload" toast when a new version is waiting.
 
@@ -36,7 +39,7 @@ All paths are relative, so the app also works from a subpath (for example `examp
 
 ### Shared-link preview
 
-The live site is [ali-shokoohi.github.io/hermes-walls](https://ali-shokoohi.github.io/hermes-walls/). Its static Open Graph and Twitter card metadata in `index.html` points to `screenshots/social-preview.png` with a version query to distinguish revised artwork from older cached images. Absolute HTTPS URLs are intentional for social crawlers; update `og:url`, `og:image`, and `twitter:image` if deploying to another public address. Runtime asset references remain relative and work offline/from disk. The English-only preview is the same for every language/deep link; it does not require JavaScript to be discovered. The app itself remains bilingual.
+The live site is [hermes-walls.shokoohi.dev](https://hermes-walls.shokoohi.dev/). Its static Open Graph and Twitter card metadata in `index.html` points to `screenshots/social-preview.png` with a version query to distinguish revised artwork from older cached images. Absolute HTTPS URLs are intentional for social crawlers; update `og:url`, `og:image`, and `twitter:image` if deploying to another public address. Runtime asset references remain relative and work offline/from disk. The English-only preview is the same for every language/deep link; it does not require JavaScript to be discovered. The app itself remains bilingual.
 
 To refresh the artwork, edit `tools/social-preview.html`, start disposable Chromium with loopback debugging as described below, then run `rtk proxy node tools/render-social-preview.mjs`. This development-only renderer uses the existing screenshot and local fonts, checks image loading, bounds, 1280×640 dimensions, and the under-1-MB size limit. Review the generated PNG and bump the service-worker version before deploying it. Do not add the artwork source or renderer to the app shell.
 
