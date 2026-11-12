@@ -1,0 +1,86 @@
+{
+  "capturedAt": "2026-11-12T08:23:09.021Z",
+  "source": "https://hermes-walls.shokoohi.dev/",
+  "shots": [
+    {
+      "file": "01-desktop-light-overview.png",
+      "description": "Complete English lab with walls, architecture and attacks.",
+      "url": "https://hermes-walls.shokoohi.dev/?lang=en",
+      "lang": "en",
+      "theme": "light",
+      "width": 1680,
+      "height": 1100,
+      "dpr": 1.5
+    },
+    {
+      "file": "02-desktop-dark-map.png",
+      "description": "Dark architecture focus with side panels collapsed.",
+      "url": "https://hermes-walls.shokoohi.dev/?lang=en",
+      "lang": "en",
+      "theme": "dark",
+      "width": 1680,
+      "height": 1100,
+      "dpr": 1.5
+    },
+    {
+      "file": "03-desktop-attack-blocked.png",
+      "description": "A completed modeled attack with its defense result highlighted.",
+      "url": "https://hermes-walls.shokoohi.dev/?lang=en",
+      "lang": "en",
+      "theme": "light",
+      "width": 1680,
+      "height": 1100,
+      "dpr": 1.5
+    },
+    {
+      "file": "04-desktop-component-inspector.png",
+      "description": "Dark lab with a Hermes component inspection panel.",
+      "url": "https://hermes-walls.shokoohi.dev/?lang=en",
+      "lang": "en",
+      "theme": "dark",
+      "width": 1680,
+      "height": 1100,
+      "dpr": 1.5
+    },
+    {
+      "file": "05-desktop-persian-overview.png",
+      "description": "Persian RTL lab overview in light mode.",
+      "url": "https://hermes-walls.shokoohi.dev/?lang=fa",
+      "lang": "fa",
+      "theme": "light",
+      "width": 1680,
+      "height": 1100,
+      "dpr": 1.5
+    },
+    {
+      "file": "06-mobile-light-map.png",
+      "description": "Phone portrait architecture view.",
+      "url": "https://hermes-walls.shokoohi.dev/?lang=en",
+      "lang": "en",
+      "theme": "light",
+      "width": 430,
+      "height": 932,
+      "dpr": 2
+    },
+    {
+      "file": "07-mobile-persian-dark-attacks.png",
+      "description": "Persian phone attack library in dark mode.",
+      "url": "https://hermes-walls.shokoohi.dev/?lang=fa",
+      "lang": "fa",
+      "theme": "dark",
+      "width": 430,
+      "height": 932,
+      "dpr": 2
+    },
+    {
+      "file": "08-mobile-add-friend.png",
+      "description": "Phone add-friend sheet with provisioning controls.",
+      "url": "https://hermes-walls.shokoohi.dev/?lang=en",
+      "lang": "en",
+      "theme": "light",
+      "width": 430,
+      "height": 932,
+      "dpr": 2
+    }
+  ]
+}
